@@ -1,160 +1,98 @@
--- Creazione della GUI
-local player = game.Players.LocalPlayer
-local screenGui = Instance.new("ScreenGui")
-screenGui.Parent = player:WaitForChild("PlayerGui")
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local TweenService = game:GetService("TweenService")
+local workspace = game:GetService("Workspace")
 
-local frame = Instance.new("Frame")
-frame.Size = UDim2.new(0, 300, 0, 300)
-frame.Position = UDim2.new(0.5, -150, 0.5, -150)
-frame.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-frame.Parent = screenGui
+local player = Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local hrp = character:WaitForChild("HumanoidRootPart")
+local enemiesFolder = workspace:WaitForChild("__Main"):WaitForChild("__Enemies"):WaitForChild("Client")
+local remote = ReplicatedStorage:WaitForChild("BridgeNet2"):WaitForChild("dataRemoteEvent")
 
--- Aggiungi un titolo principale alla GUI
-local titleLabel = Instance.new("TextLabel")
-titleLabel.Size = UDim2.new(1, 0, 0, 50)
-titleLabel.Text = "Controllo Automazione"
-titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-titleLabel.TextScaled = true
-titleLabel.BackgroundTransparency = 1
-titleLabel.Parent = frame
+local teleportEnabled = false
+local killedNPCs = {}
+local selectedMobName = ""
+local movementMethod = "Tween" -- Default movement method
 
--- Tab Teletrasporto
-local teleportTab = Instance.new("Frame")
-teleportTab.Size = UDim2.new(0, 300, 0, 100)
-teleportTab.Position = UDim2.new(0, 0, 0.1, 0)
-teleportTab.BackgroundColor3 = Color3.fromRGB(0, 0, 255)
-teleportTab.Parent = frame
+-- Function to move to a target
+local function moveToTarget(target)
+    if not target or not target:FindFirstChild("HumanoidRootPart") then return end
+    local enemyHrp = target.HumanoidRootPart
 
-local teleportLabel = Instance.new("TextLabel")
-teleportLabel.Size = UDim2.new(1, 0, 0, 50)
-teleportLabel.Text = "Teletrasporto"
-teleportLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-teleportLabel.TextScaled = true
-teleportLabel.BackgroundTransparency = 1
-teleportLabel.Parent = teleportTab
+    if movementMethod == "Teleport" then
+        hrp.CFrame = enemyHrp.CFrame * CFrame.new(0, 0, 6)
+    elseif movementMethod == "Tween" then
+        local tweenInfo = TweenInfo.new(0.5, Enum.EasingStyle.Linear)
+        local tween = TweenService:Create(hrp, tweenInfo, {CFrame = enemyHrp.CFrame * CFrame.new(0, 0, 6)})
+        tween:Play()
+    elseif movementMethod == "Walk" then
+        hrp.Parent:MoveTo(enemyHrp.Position)
+    end
+end
 
--- Crea il bottone per teletrasportarsi
-local teleportButton = Instance.new("TextButton")
-teleportButton.Size = UDim2.new(0, 200, 0, 50)
-teleportButton.Position = UDim2.new(0.5, -100, 0.5, 0)
-teleportButton.Text = "Teletrasporta"
-teleportButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-teleportButton.BackgroundColor3 = Color3.fromRGB(0, 0, 255)
-teleportButton.TextScaled = true
-teleportButton.Parent = teleportTab
-
--- Tab Auto Farm
-local autoFarmTab = Instance.new("Frame")
-autoFarmTab.Size = UDim2.new(0, 300, 0, 100)
-autoFarmTab.Position = UDim2.new(0, 0, 0.3, 0)
-autoFarmTab.BackgroundColor3 = Color3.fromRGB(0, 128, 0)
-autoFarmTab.Parent = frame
-
-local autoFarmLabel = Instance.new("TextLabel")
-autoFarmLabel.Size = UDim2.new(1, 0, 0, 50)
-autoFarmLabel.Text = "Auto Farm"
-autoFarmLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-autoFarmLabel.TextScaled = true
-autoFarmLabel.BackgroundTransparency = 1
-autoFarmLabel.Parent = autoFarmTab
-
--- Crea il bottone per attaccare i nemici
-local attackButton = Instance.new("TextButton")
-attackButton.Size = UDim2.new(0, 200, 0, 50)
-attackButton.Position = UDim2.new(0.5, -100, 0.5, 0)
-attackButton.Text = "Attacca Nemici"
-attackButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-attackButton.BackgroundColor3 = Color3.fromRGB(0, 128, 0)
-attackButton.TextScaled = true
-attackButton.Parent = autoFarmTab
-
--- Aggiungi il bottone per avviare l'automazione completa
-local autoButton = Instance.new("TextButton")
-autoButton.Size = UDim2.new(0, 200, 0, 50)
-autoButton.Position = UDim2.new(0.5, -100, 0.8, 0)
-autoButton.Text = "Avvia Automazione"
-autoButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-autoButton.BackgroundColor3 = Color3.fromRGB(255, 165, 0)
-autoButton.TextScaled = true
-autoButton.Parent = frame
-
--- Funzione per trovare i nemici
-function trovaNemici()
-    local nemici = {}
-    for _, entità in ipairs(game.Workspace:GetChildren()) do
-        if entità:IsA("Model") and entità:FindFirstChild("Humanoid") then
-            table.insert(nemici, entità)
+-- Function to detect if an enemy is dead
+local function isEnemyDead(enemy)
+    local healthBar = enemy:FindFirstChild("HealthBar")
+    if healthBar and healthBar:FindFirstChild("Main") and healthBar.Main:FindFirstChild("Bar") then
+        local amount = healthBar.Main.Bar:FindFirstChild("Amount")
+        if amount and amount:IsA("TextLabel") and amount.ContentText == "0 HP" then
+            return true
         end
     end
-    return nemici
+    return false
 end
 
--- Funzione per attaccare il nemico più vicino
-function attaccaNemico()
-    local nemici = trovaNemici()
-    if #nemici == 0 then
-        print("Nessun nemico trovato!")
-        return
-    end
+-- Function to get the nearest enemy
+local function getNearestEnemy()
+    local nearestEnemy, shortestDistance = nil, math.huge
+    local playerPosition = hrp.Position
 
-    -- Trova il nemico più vicino
-    local nemicoPiùVicino = nil
-    local distanzaMinima = math.huge
-    local posizioneGiocatore = player.Character.HumanoidRootPart.Position
-
-    for _, nemico in ipairs(nemici) do
-        local distanza = (posizioneGiocatore - nemico.HumanoidRootPart.Position).magnitude
-        if distanza < distanzaMinima then
-            distanzaMinima = distanza
-            nemicoPiùVicino = nemico
+    for _, enemy in ipairs(enemiesFolder:GetChildren()) do
+        if enemy:IsA("Model") and enemy:FindFirstChild("HumanoidRootPart") and not killedNPCs[enemy.Name] then
+            local distance = (playerPosition - enemy:GetPivot().Position).Magnitude
+            if distance < shortestDistance then
+                shortestDistance = distance
+                nearestEnemy = enemy
+            end
         end
     end
-
-    -- Esegui l'attacco al nemico più vicino
-    if nemicoPiùVicino then
-        print("Attaccando il nemico: " .. nemicoPiùVicino.Name)
-        -- Qui puoi aggiungere il codice per infliggere danni o fare altre azioni
-    else
-        print("Nessun nemico vicino per attaccare.")
-    end
+    return nearestEnemy
 end
 
--- Funzione per teletrasportarsi dopo la fine di un evento
-function teletrasportaDopoEvento()
-    local eventoCompletato = false
+-- Auto farm function
+local function teleportAndTrackDeath()
+    while teleportEnabled do
+        local target = getNearestEnemy()
+        if target and target.Parent then
+            moveToTarget(target)
+            task.wait(0.5)
+            remote:FireServer({
+                {
+                    ["PetPos"] = {},
+                    ["AttackType"] = "All",
+                    ["Event"] = "Attack",
+                    ["Enemy"] = target.Name
+                },
+                "\7"
+            })
 
-    -- Simula la fine di un evento (puoi modificare la logica)
-    while not eventoCompletato do
-        if game.ReplicatedStorage:FindFirstChild("EventoCompletato") then
-            eventoCompletato = true
+            while teleportEnabled and target.Parent and not isEnemyDead(target) do
+                task.wait(0.1)
+            end
+
+            killedNPCs[target.Name] = true
         end
-        wait(1)
+        task.wait(0.2)
     end
-
-    -- Teletrasportati a una posizione specifica
-    local destinazione = Vector3.new(0, 50, 0)
-    player.Character:MoveTo(destinazione)
-    print("Teletrasportato a " .. tostring(destinazione))
 end
 
--- Funzione principale per avviare l'automazione dalla GUI
-function avviaAutomazione()
-    -- Attacca i nemici
-    attaccaNemico()
-
-    -- Attendere che l'evento finisca e teletrasportarsi
-    teletrasportaDopoEvento()
+-- Toggle for auto farm
+local function toggleAutoFarm(state)
+    teleportEnabled = state
+    if state then
+        task.spawn(teleportAndTrackDeath)
+    end
 end
 
--- Connessioni dei bottoni
-attackButton.MouseButton1Click:Connect(function()
-    attaccaNemico()
-end)
-
-teleportButton.MouseButton1Click:Connect(function()
-    teletrasportaDopoEvento()
-end)
-
-autoButton.MouseButton1Click:Connect(function()
-    avviaAutomazione()
-end)
+-- Example usage: toggleAutoFarm(true) to start auto farming
+-- toggleAutoFarm(false) to stop auto farming
