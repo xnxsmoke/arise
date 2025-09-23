@@ -1,13 +1,11 @@
 local Rayfield = loadstring(game:HttpGet("https://sirius.menu/rayfield"))()
 
--- Stato interno
-local insideCastle = false
-local autoRestartPortal -- sarà inizializzato dal toggle
-
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local dataRemoteEvent = ReplicatedStorage:WaitForChild("BridgeNet2"):WaitForChild("dataRemoteEvent")
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
 
--- GUI con nome personalizzato
+-- GUI
 local Window = Rayfield:CreateWindow({
     Name = "xnxsmoke Hub",
     LoadingTitle = "xnxsmoke Loader",
@@ -19,86 +17,83 @@ local Window = Rayfield:CreateWindow({
     },
 })
 
--- Tab per Infinite Castle
+-- Tabs
 local CastleTab = Window:CreateTab("InfCastle", 4483362458)
-
--- NUOVA tab per InfDesert
 local DesertTab = Window:CreateTab("InfDesert", 4483362458)
 
--- Toggle auto-restart portal
-local PortalToggle = CastleTab:CreateToggle({
+-- Toggle Auto-Restart
+local autoRestartPortal = false
+CastleTab:CreateToggle({
     Name = "Auto-Restart alla distruzione del portale",
     CurrentValue = false,
     Flag = "AutoRestartPortalFlag",
     Callback = function(Value)
         autoRestartPortal = Value
-        if Value then
-            Rayfield:Notify({Title="Auto-Restart", Content="Attivato!", Duration=3})
-        else
-            Rayfield:Notify({Title="Auto-Restart", Content="Disattivato!", Duration=3})
-        end
-    end,
+        Rayfield:Notify({
+            Title = "Auto-Restart",
+            Content = Value and "Attivato!" or "Disattivato!",
+            Duration = 3
+        })
+    end
 })
 
 -- Toggle Stand in the Middle
-local middleCFrame = CFrame.new(Vector3.new(432.6329, 4384.6372, -1898.6741))
-local StandToggle
-StandToggle = CastleTab:CreateToggle({
+local middleCFrame = CFrame.new(432.6329, 4384.6372, -1898.6741)
+local StandToggle = CastleTab:CreateToggle({
     Name = "Stand in the Middle",
     CurrentValue = false,
     Flag = "StandInMiddleFlag",
     Callback = function(Value)
-        if not insideCastle and Value then
+        if Value then
             Rayfield:Notify({
                 Title = "Stand in the Middle",
-                Content = "Funziona solo dentro l'InfCastle!",
+                Content = "Attivo! Teletrasporto al centro quando possibile.",
+                Duration = 3
+            })
+        else
+            Rayfield:Notify({
+                Title = "Stand in the Middle",
+                Content = "Disattivato.",
                 Duration = 3
             })
         end
-    end,
+    end
 })
-
--- Carica la configurazione dopo aver creato GUI e toggle
-Rayfield:LoadConfiguration("InfiniteCastleHub")
 
 -- Funzioni principali
 local function startInfiniteCastle()
-    if insideCastle then return end
     local createArgs = {{ { Event = "InfiniteCastleAction", Action = "Create" }, "\r" }}
     dataRemoteEvent:FireServer(unpack(createArgs))
     wait(2)
     local startArgs = {{ { Dungeon = 3604563306, Event = "InfiniteCastleAction", Action = "Start" }, "\r" }}
     dataRemoteEvent:FireServer(unpack(startArgs))
-    insideCastle = true
     print("Castello avviato")
 end
 
 local function restartCastle()
-    if not insideCastle then return end
     local leaveArgs = {{ { Event = "InfiniteCastleAction", Action = "Leave" }, "\r" }}
     dataRemoteEvent:FireServer(unpack(leaveArgs))
-    insideCastle = false
     print("Castello riavviato")
 end
 
--- Monitor portal destroyed
+-- Monitor Portal Destroyed
 dataRemoteEvent.OnClientEvent:Connect(function(...)
-    if autoRestartPortal ~= true then return end
+    if not autoRestartPortal then return end
     local args = {...}
     local function checkTable(tbl)
         if type(tbl) ~= "table" then return end
-        for k, val in pairs(tbl) do
-            if type(val) == "table" then
-                checkTable(val)
-            elseif k == "Message" and tostring(val):upper():find("PORTAL DESTROYED") then
-                print("Portale distrutto rilevato! Riavvio castello...")
+        for k,v in pairs(tbl) do
+            if type(v) == "table" then
+                checkTable(v)
+            elseif k == "Message" and tostring(v):upper():find("PORTAL DESTROYED") then
+                print("Portale distrutto! Riavvio castello...")
                 restartCastle()
                 wait(3)
                 startInfiniteCastle()
             end
         end
     end
-    for _, v in ipairs(args) do
+    for _,v in ipairs(args) do
         checkTable(v)
     end
 end)
@@ -110,21 +105,29 @@ CastleTab:CreateButton({
     Flag = "StartManualFlag"
 })
 
--- Placeholder per InfDesert
+-- Loop continuo Stand in the Middle
+spawn(function()
+    while true do
+        wait(0.1)
+        if StandToggle:Get() and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+            player.Character.HumanoidRootPart.CFrame = middleCFrame
+        end
+    end
+end)
+
+-- Teleport automatico al respawn
+player.CharacterAdded:Connect(function(char)
+    wait(0.5)
+    if StandToggle:Get() and char:FindFirstChild("HumanoidRootPart") then
+        char.HumanoidRootPart.CFrame = middleCFrame
+    end
+end)
+
+-- Placeholder InfDesert
 DesertTab:CreateParagraph({
     Title = "Work in Progress",
     Content = "Qui aggiungeremo i controlli per InfDesert."
 })
 
--- Loop continuo per Stand in the Middle
-spawn(function()
-    while true do
-        wait(0.1)
-        if StandToggle:Get() and insideCastle then
-            local player = game.Players.LocalPlayer
-            if player and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-                player.Character.HumanoidRootPart.CFrame = middleCFrame
-            end
-        end
-    end
-end)
+-- Carica configurazione
+Rayfield:LoadConfiguration("InfiniteCastleHub")
