@@ -2,12 +2,12 @@ local Rayfield = loadstring(game:HttpGet("https://sirius.menu/rayfield"))()
 
 -- Stato interno
 local insideCastle = false
-local autoRestartPortal -- verrà impostato dal toggle
+local autoRestartPortal -- sarà inizializzato dal toggle
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local dataRemoteEvent = ReplicatedStorage:WaitForChild("BridgeNet2"):WaitForChild("dataRemoteEvent")
 
--- GUI completa con toggle, slider e pulsanti
+-- GUI completa
 local Window = Rayfield:CreateWindow({
     Name = "InfiniteCastle Hub",
     LoadingTitle = "InfiniteCastle Loader",
@@ -21,13 +21,10 @@ local Window = Rayfield:CreateWindow({
 
 local MainTab = Window:CreateTab("Main", 4483362458)
 
--- Carica la configurazione salvata all'avvio
-Rayfield:LoadConfiguration("InfiniteCastleHub")
-
--- Toggle auto-restart portal con Flag per salvataggio automatico
+-- Toggle auto-restart portal
 local PortalToggle = MainTab:CreateToggle({
     Name = "Auto-Restart alla distruzione del portale",
-    CurrentValue = false,
+    CurrentValue = false, -- default, sarà sovrascritto dalla config
     Flag = "AutoRestartPortalFlag",
     Callback = function(Value)
         autoRestartPortal = Value
@@ -39,34 +36,32 @@ local PortalToggle = MainTab:CreateToggle({
     end,
 })
 
+-- Carica la configurazione solo dopo che toggle e GUI sono pronti
+Rayfield:LoadConfiguration("InfiniteCastleHub")
+
 -- Funzioni principali
 local function startInfiniteCastle()
     if insideCastle then return end
-
     local createArgs = {{ { Event = "InfiniteCastleAction", Action = "Create" }, "\r" }}
     dataRemoteEvent:FireServer(unpack(createArgs))
     wait(2)
-
     local startArgs = {{ { Dungeon = 3604563306, Event = "InfiniteCastleAction", Action = "Start" }, "\r" }}
     dataRemoteEvent:FireServer(unpack(startArgs))
-
     insideCastle = true
     print("Castello avviato")
 end
 
 local function restartCastle()
     if not insideCastle then return end
-
     local leaveArgs = {{ { Event = "InfiniteCastleAction", Action = "Leave" }, "\r" }}
     dataRemoteEvent:FireServer(unpack(leaveArgs))
-
     insideCastle = false
     print("Castello riavviato")
 end
 
 -- Monitor portal destroyed
 dataRemoteEvent.OnClientEvent:Connect(function(...)
-    if autoRestartPortal ~= true then return end -- controlla solo se toggle è attivo
+    if autoRestartPortal ~= true then return end
     local args = {...}
     local function checkTable(tbl)
         if type(tbl) ~= "table" then return end
@@ -86,20 +81,15 @@ dataRemoteEvent.OnClientEvent:Connect(function(...)
     end
 end)
 
--- Pulsante manuale per avviare il castello
+-- Pulsanti manuali
 MainTab:CreateButton({
     Name = "Avvia InfCastle Manuale",
-    Callback = function()
-        startInfiniteCastle()
-    end,
+    Callback = function() startInfiniteCastle() end,
     Flag = "StartManualFlag"
 })
 
--- Pulsante manuale per riavviare il castello
 MainTab:CreateButton({
     Name = "Riavvia InfCastle Manuale",
-    Callback = function()
-        restartCastle()
-    end,
+    Callback = function() restartCastle() end,
     Flag = "RestartManualFlag"
 })
