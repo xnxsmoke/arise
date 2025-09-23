@@ -57,7 +57,6 @@ local Window = Rayfield:CreateWindow({
 
 local MainTab = Window:CreateTab("Main", 4483362458)
 
--- Keep track so we don't spawn multiple checker loops
 local autoRestartThreadRunning = false
 
 -- Functions interacting with the game
@@ -100,25 +99,28 @@ function isInInfiniteCastle()
     local player = game.Players.LocalPlayer
     if not player then return false end
     local gui = player:FindFirstChild("PlayerGui") and player.PlayerGui:FindFirstChild("InfiniteCastleGui")
-    if gui then return true end
-    local wave = getCurrentWave()
-    return wave and wave > 0
+    if gui then
+        local wave = getCurrentWave()
+        return wave and wave > 0
+    end
+    return false
 end
 
--- Auto-Restart loop (riavvia quando raggiungi restartAtWave)
+-- Auto-Restart loop (rispetta slider e previene loop)
 local function startAutoRestartLoop()
     if autoRestartThreadRunning then return end
     autoRestartThreadRunning = true
     spawn(function()
         while autoRestartEnabled do
             local wave = getCurrentWave()
+            -- legge restartAtWave corrente ad ogni iterazione
             if wave and wave >= restartAtWave then
                 Rayfield:Notify({Title="Restart!", Content="Raggiunta wave "..wave..". Riavvio...", Duration=3})
                 restartCastle()
-                -- 🔹 Aspetta finché non esci davvero dal castello
+                -- aspetta di essere effettivamente fuori dal castello
                 repeat wait(1) until not isInInfiniteCastle()
                 wait(3)
-                -- 🔹 Entra solo se auto-start è abilitato e non sei già dentro
+                -- entra solo se auto-start abilitato e non sei già dentro
                 if autoStartEnabled and not isInInfiniteCastle() then
                     startInfiniteCastle()
                 end
@@ -151,7 +153,7 @@ local AutoInfiniteToggle = MainTab:CreateToggle({
 })
 
 local WaveSlider = MainTab:CreateSlider({
-    Name = "Wave per Restart (imposta 71 se vuoi riavviare a 71)",
+    Name = "Wave per Restart",
     Range = {1, 200},
     Increment = 1,
     CurrentValue = restartAtWave,
@@ -178,8 +180,7 @@ local AutoRestartToggle = MainTab:CreateToggle({
     end,
 })
 
--- Se la config caricata aveva i toggle attivi, avvia subito le funzioni,
--- ma evita di auto-startare se sei già dentro all'Infinite Castle per prevenire loop
+-- Se la config caricata aveva i toggle attivi, avvia subito le funzioni senza creare loop
 if autoStartEnabled then
     spawn(function()
         wait(0.5)
@@ -196,7 +197,3 @@ if autoRestartEnabled then
         startAutoRestartLoop()
     end)
 end
-
--- Nota: questo script salva anche in un file JSON (se writefile/readfile esistono nell'executor).
--- In ambienti dove writefile non è disponibile, Rayfield dovrebbe comunque salvare i Flag nella sua cartella di configurazione.
--- La funzione isInInfiniteCastle() prova a rilevare se sei già dentro controllando la GUI o la wave.
