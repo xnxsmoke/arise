@@ -2,10 +2,42 @@ local Rayfield = loadstring(game:HttpGet("https://sirius.menu/rayfield"))()
 
 -- Stato interno
 local insideCastle = false
-local autoRestartPortal -- lasciato nil, sarà gestito dalla GUI Rayfield
+local autoRestartPortal -- verrà impostato dal toggle
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local dataRemoteEvent = ReplicatedStorage:WaitForChild("BridgeNet2"):WaitForChild("dataRemoteEvent")
+
+-- GUI completa con toggle, slider e pulsanti
+local Window = Rayfield:CreateWindow({
+    Name = "InfiniteCastle Hub",
+    LoadingTitle = "InfiniteCastle Loader",
+    LoadingSubtitle = "by xnxsmoke",
+    ConfigurationSaving = {
+        Enabled = true,
+        FileName = "InfiniteCastleHub",
+        AutoSave = true
+    },
+})
+
+local MainTab = Window:CreateTab("Main", 4483362458)
+
+-- Carica la configurazione salvata all'avvio
+Rayfield:LoadConfiguration("InfiniteCastleHub")
+
+-- Toggle auto-restart portal con Flag per salvataggio automatico
+local PortalToggle = MainTab:CreateToggle({
+    Name = "Auto-Restart alla distruzione del portale",
+    CurrentValue = false,
+    Flag = "AutoRestartPortalFlag",
+    Callback = function(Value)
+        autoRestartPortal = Value
+        if Value then
+            Rayfield:Notify({Title="Auto-Restart", Content="Attivato!", Duration=3})
+        else
+            Rayfield:Notify({Title="Auto-Restart", Content="Disattivato!", Duration=3})
+        end
+    end,
+})
 
 -- Funzioni principali
 local function startInfiniteCastle()
@@ -34,7 +66,7 @@ end
 
 -- Monitor portal destroyed
 dataRemoteEvent.OnClientEvent:Connect(function(...)
-    if not autoRestartPortal then return end
+    if autoRestartPortal ~= true then return end -- controlla solo se toggle è attivo
     local args = {...}
     local function checkTable(tbl)
         if type(tbl) ~= "table" then return end
@@ -54,42 +86,13 @@ dataRemoteEvent.OnClientEvent:Connect(function(...)
     end
 end)
 
--- GUI completa con toggle, slider e pulsanti
-local Window = Rayfield:CreateWindow({
-    Name = "InfiniteCastle Hub",
-    LoadingTitle = "InfiniteCastle Loader",
-    LoadingSubtitle = "by xnxsmoke",
-    ConfigurationSaving = {
-        Enabled = true,
-        FileName = "InfiniteCastleHub",
-        AutoSave = true
-    },
-})
-
-local MainTab = Window:CreateTab("Main", 4483362458)
-
--- Toggle auto-restart portal con Flag per salvataggio automatico
-local PortalToggle = MainTab:CreateToggle({
-    Name = "Auto-Restart alla distruzione del portale",
-    CurrentValue = false, -- default iniziale, sarà sovrascritto dalla config salvata
-    Flag = "AutoRestartPortalFlag", -- fondamentale per salvare e caricare la config
-    Callback = function(Value)
-        autoRestartPortal = Value
-        if Value then
-            Rayfield:Notify({Title="Auto-Restart", Content="Attivato!", Duration=3})
-        else
-            Rayfield:Notify({Title="Auto-Restart", Content="Disattivato!", Duration=3})
-        end
-    end,
-})
-
 -- Pulsante manuale per avviare il castello
 MainTab:CreateButton({
     Name = "Avvia InfCastle Manuale",
     Callback = function()
         startInfiniteCastle()
     end,
-    Flag = "StartManualFlag" -- opzionale, solo per salvataggio eventuale
+    Flag = "StartManualFlag"
 })
 
 -- Pulsante manuale per riavviare il castello
@@ -98,8 +101,5 @@ MainTab:CreateButton({
     Callback = function()
         restartCastle()
     end,
-    Flag = "RestartManualFlag" -- opzionale, solo per salvataggio eventuale
+    Flag = "RestartManualFlag"
 })
-
--- Ora la variabile autoRestartPortal verrà inizializzata correttamente dal toggle salvato,
--- anche quando lo script è eseguito automaticamente tramite auto-execute.
