@@ -1,53 +1,35 @@
 local Rayfield = loadstring(game:HttpGet("https://sirius.menu/rayfield"))()
 
-local HttpService = game:GetService("HttpService")
+-- Configurazione tempo stimato per wave 10 (in secondi)
+local tempoStimatoPerWave10 = 120 -- puoi modificare in base alla tua esperienza
 
--- CONFIG FILE
-local configFileName = "InfiniteCastleHub_config.json"
-
--- default values
-local restartAtWave = 71
-local autoStartEnabled = false
+-- Stato interno
 local autoRestartEnabled = false
 
--- internal state
-local insideCastle = false
+-- Funzioni per avviare e riavviare il castello
+local function startInfiniteCastle()
+    local ReplicatedStorage = game:GetService("ReplicatedStorage")
+    local dataRemoteEvent = ReplicatedStorage:WaitForChild("BridgeNet2"):WaitForChild("dataRemoteEvent")
 
--- Utility: load/save config
-local function LoadConfig()
-    if type(readfile) == "function" and pcall(function() return isfile(configFileName) end) and isfile(configFileName) then
-        local ok, raw = pcall(function() return readfile(configFileName) end)
-        if ok and raw then
-            local success, decoded = pcall(function() return HttpService:JSONDecode(raw) end)
-            if success and type(decoded) == "table" then
-                return decoded
-            end
-        end
-    end
-    return nil
+    local createArgs = {{ { Event = "InfiniteCastleAction", Action = "Create" }, "\r" }}
+    dataRemoteEvent:FireServer(unpack(createArgs))
+    wait(2)
+
+    local startArgs = {{ { Dungeon = 3604563306, Event = "InfiniteCastleAction", Action = "Start" }, "\r" }}
+    dataRemoteEvent:FireServer(unpack(startArgs))
+    print("Castello avviato")
 end
 
-local function SaveConfig()
-    if type(writefile) ~= "function" then return end
-    local data = {
-        restartAtWave = restartAtWave,
-        autoStartEnabled = autoStartEnabled,
-        autoRestartEnabled = autoRestartEnabled,
-    }
-    local ok, encoded = pcall(function() return HttpService:JSONEncode(data) end)
-    if ok and encoded then
-        pcall(function() writefile(configFileName, encoded) end)
-    end
+local function restartCastle()
+    local ReplicatedStorage = game:GetService("ReplicatedStorage")
+    local dataRemoteEvent = ReplicatedStorage:WaitForChild("BridgeNet2"):WaitForChild("dataRemoteEvent")
+
+    local leaveArgs = {{ { Event = "InfiniteCastleAction", Action = "Leave" }, "\r" }}
+    dataRemoteEvent:FireServer(unpack(leaveArgs))
+    print("Castello riavviato")
 end
 
--- try to load saved config
-local loaded = LoadConfig()
-if loaded then
-    restartAtWave = loaded.restartAtWave or restartAtWave
-    autoStartEnabled = loaded.autoStartEnabled == true
-    autoRestartEnabled = loaded.autoRestartEnabled == true
-end
-
+-- UI
 local Window = Rayfield:CreateWindow({
     Name = "InfiniteCastle Hub",
     LoadingTitle = "InfiniteCastle Loader",
@@ -60,128 +42,35 @@ local Window = Rayfield:CreateWindow({
 
 local MainTab = Window:CreateTab("Main", 4483362458)
 
-local autoRestartThreadRunning = false
-
--- Functions
-function startInfiniteCastle()
-    if insideCastle then return end
-    insideCastle = true
-
-    local ReplicatedStorage = game:GetService("ReplicatedStorage")
-    local dataRemoteEvent = ReplicatedStorage:WaitForChild("BridgeNet2"):WaitForChild("dataRemoteEvent")
-
-    local createArgs = {{ { Event = "InfiniteCastleAction", Action = "Create" }, "\r" }}
-    dataRemoteEvent:FireServer(unpack(createArgs))
-    wait(2)
-
-    local startArgs = {{ { Dungeon = 3604563306, Event = "InfiniteCastleAction", Action = "Start" }, "\r" }}
-    dataRemoteEvent:FireServer(unpack(startArgs))
-end
-
-function restartCastle()
-    if not insideCastle then return end
-    local ReplicatedStorage = game:GetService("ReplicatedStorage")
-    local dataRemoteEvent = ReplicatedStorage:WaitForChild("BridgeNet2"):WaitForChild("dataRemoteEvent")
-
-    local leaveArgs = {{ { Event = "InfiniteCastleAction", Action = "Leave" }, "\r" }}
-    dataRemoteEvent:FireServer(unpack(leaveArgs))
-    insideCastle = false
-    wait(2)
-end
-
-function getCurrentWave()
-    local player = game.Players.LocalPlayer
-    if not player then return 0 end
-    local gui = player:FindFirstChild("PlayerGui") and player.PlayerGui:FindFirstChild("InfiniteCastleGui")
-    if gui then
-        for _, v in ipairs(gui:GetDescendants()) do
-            if v:IsA("TextLabel") and v.Name:lower():find("wave") and v.Text:match("%d+") then
-                return tonumber(v.Text:match("%d+"))
-            end
-        end
-    end
-    return 0
-end
-
--- Auto-Restart loop basato sulla wave dello slider
-local function startAutoRestartLoop()
-    if autoRestartThreadRunning then return end
-    autoRestartThreadRunning = true
-    spawn(function()
-        while autoRestartEnabled do
-            local wave = getCurrentWave()
-            if wave and wave >= restartAtWave then
-                Rayfield:Notify({Title="Restart!", Content="Raggiunta wave "..wave..". Riavvio automatico...", Duration=3})
-                restartCastle()
-                wait(3)  -- breve pausa per uscire correttamente
-                startInfiniteCastle()
-                wait(5)  -- pausa per evitare loop immediati
-            end
-            wait(1)
-        end
-        autoRestartThreadRunning = false
-    end)
-end
-
--- UI
-local AutoInfiniteToggle = MainTab:CreateToggle({
-    Name = "Auto InfiniteCastle",
-    CurrentValue = autoStartEnabled,
-    Flag = "AutoInfiniteCastleFlag",
-    Callback = function(Value)
-        autoStartEnabled = Value
-        SaveConfig()
-        if autoStartEnabled then
-            if insideCastle then
-                Rayfield:Notify({Title="Auto InfiniteCastle", Content="Sei già dentro all'Infinite Castle: avvio automatico disabilitato.", Duration=5})
-            else
-                Rayfield:Notify({Title="Auto InfiniteCastle", Content="Auto-InfiniteCastle avviato!", Duration=3})
-                startInfiniteCastle()
-            end
-        else
-            Rayfield:Notify({Title="Auto InfiniteCastle", Content="Auto-InfiniteCastle fermato!", Duration=3})
-        end
-    end,
-})
-
-local WaveSlider = MainTab:CreateSlider({
-    Name = "Wave per Restart",
-    Range = {1, 200},
-    Increment = 1,
-    CurrentValue = restartAtWave,
-    Flag = "RestartWaveFlag",
-    Callback = function(Value)
-        restartAtWave = Value
-        SaveConfig()
-    end,
-})
-
 local AutoRestartToggle = MainTab:CreateToggle({
-    Name = "Auto-Restart Castle",
-    CurrentValue = autoRestartEnabled,
-    Flag = "AutoRestartCastleFlag",
+    Name = "Auto-Restart basato sul tempo",
+    CurrentValue = false,
+    Flag = "AutoRestartTimeFlag",
     Callback = function(Value)
         autoRestartEnabled = Value
-        SaveConfig()
         if autoRestartEnabled then
-            Rayfield:Notify({Title="Auto-Restart", Content="Controllo wave attivo!", Duration=3})
-            startAutoRestartLoop()
+            Rayfield:Notify({Title="Auto-Restart", Content="Auto-Restart attivato!", Duration=3})
+            spawn(function()
+                while autoRestartEnabled do
+                    startInfiniteCastle()
+                    wait(tempoStimatoPerWave10)
+                    restartCastle()
+                    wait(3) -- breve pausa
+                end
+            end)
         else
             Rayfield:Notify({Title="Auto-Restart", Content="Auto-Restart fermato!", Duration=3})
         end
     end,
 })
 
--- Avvio iniziale
-if autoStartEnabled and not insideCastle then
-    spawn(function()
-        wait(0.5)
-        startInfiniteCastle()
-    end)
-end
-if autoRestartEnabled then
-    spawn(function()
-        wait(0.5)
-        startAutoRestartLoop()
-    end)
-end
+local TimeSlider = MainTab:CreateSlider({
+    Name = "Tempo stimato (sec)",
+    Range = {10, 600},
+    Increment = 5,
+    CurrentValue = tempoStimatoPerWave10,
+    Flag = "TempoStimatoFlag",
+    Callback = function(Value)
+        tempoStimatoPerWave10 = Value
+    end,
+})
