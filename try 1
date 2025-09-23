@@ -1,3 +1,4 @@
+-- Rayfield GUI completa con auto-restart basato sul portale distrutto
 local Rayfield = loadstring(game:HttpGet("https://sirius.menu/rayfield"))()
 
 -- Stato interno
@@ -54,7 +55,7 @@ dataRemoteEvent.OnClientEvent:Connect(function(...)
     end
 end)
 
--- UI
+-- GUI completa con toggle, slider e pulsanti
 local Window = Rayfield:CreateWindow({
     Name = "InfiniteCastle Hub",
     LoadingTitle = "InfiniteCastle Loader",
@@ -79,7 +80,19 @@ local PortalToggle = MainTab:CreateToggle({
     end,
 })
 
--- Pulsante manuale start/restart
+-- Slider tempo stimato (opzionale, per stime future)
+local TimeSlider = MainTab:CreateSlider({
+    Name = "Tempo stimato (sec)",
+    Range = {10, 600},
+    Increment = 5,
+    CurrentValue = 120,
+    Flag = "TempoStimatoFlag",
+    Callback = function(Value)
+        -- Può essere usato in futuro se vuoi fare restart basato sul tempo
+    end,
+})
+
+-- Pulsanti manuali
 MainTab:CreateButton({
     Name = "Avvia Castello Manuale",
     Callback = function()
