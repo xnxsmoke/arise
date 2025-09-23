@@ -54,7 +54,6 @@ local function restartCastle()
     startCastle()
 end
 
--- InfCastle GUI
 CastleTab:CreateButton({ Name = "Start Infinite Castle (Manual)", Callback = startCastle })
 CastleTab:CreateToggle({
     Name = "Stand in the Middle (InfCastle) - Use only in InfCastle",
@@ -89,7 +88,6 @@ local function restartDesert()
     startDesert()
 end
 
--- InfDesert GUI
 DesertTab:CreateButton({ Name = "Start Infinite Desert (Manual)", Callback = startDesert })
 DesertTab:CreateToggle({
     Name = "Stand in the Middle (InfDesert) - Use only in InfDesert",
@@ -107,16 +105,7 @@ DesertTab:CreateToggle({
     Callback = function(Value) autoRestartDesert = Value end
 })
 
--- ---------- Loop Stand in the Middle ----------
-task.spawn(function()
-    while true do
-        task.wait(0.2)
-        if standCastleEnabled then safeStandAt(castleCFrame) end
-        if standDesertEnabled then safeStandAt(desertCFrame) end
-    end
-end)
-
--- Teleport al respawn se toggle attivo
+-- ---------- Teleport on respawn ----------
 player.CharacterAdded:Connect(function()
     task.wait(1)
     if standCastleEnabled then safeStandAt(castleCFrame) end
