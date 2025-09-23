@@ -5,7 +5,6 @@ local dataRemoteEvent = ReplicatedStorage:WaitForChild("BridgeNet2"):WaitForChil
 local Players = game:GetService("Players")
 local player = Players.LocalPlayer
 
--- GUI
 local Window = Rayfield:CreateWindow({
     Name = "xnxsmoke Hub",
     LoadingTitle = "xnxsmoke Loader",
@@ -17,53 +16,48 @@ local Window = Rayfield:CreateWindow({
     },
 })
 
--- Tabs
 local CastleTab = Window:CreateTab("InfCastle", 4483362458)
 local DesertTab = Window:CreateTab("InfDesert", 4483362458)
 
--- Toggle Auto-Restart
 local autoRestartPortal = false
 CastleTab:CreateToggle({
-    Name = "Auto-Restart alla distruzione del portale",
+    Name = "Auto-Restart on Portal Destroyed",
     CurrentValue = false,
     Flag = "AutoRestartPortalFlag",
     Callback = function(Value)
         autoRestartPortal = Value
         Rayfield:Notify({
             Title = "Auto-Restart",
-            Content = Value and "Attivato!" or "Disattivato!",
+            Content = Value and "Enabled!" or "Disabled!",
             Duration = 3
         })
     end
 })
 
--- Toggle Stand in the Middle
 local middleCFrame = CFrame.new(432.6329, 4384.6372, -1898.6741)
 local StandToggle = CastleTab:CreateToggle({
-    Name = "Stand in the Middle",
+    Name = "Stand in the Middle (use only in InfCastle)",
     CurrentValue = false,
     Flag = "StandInMiddleFlag",
     Callback = function(Value)
         if Value then
             Rayfield:Notify({
                 Title = "Stand in the Middle",
-                Content = "Attivo! Teletrasporto al centro solo dentro InfCastle.",
+                Content = "Enabled!",
                 Duration = 3
             })
         else
             Rayfield:Notify({
                 Title = "Stand in the Middle",
-                Content = "Disattivato.",
+                Content = "Disabled.",
                 Duration = 3
             })
         end
     end
 })
 
--- Variabile interna per capire se sei dentro il castello
 local insideCastle = false
 
--- Funzioni principali
 local function startInfiniteCastle()
     local createArgs = {{ { Event = "InfiniteCastleAction", Action = "Create" }, "\r" }}
     dataRemoteEvent:FireServer(unpack(createArgs))
@@ -71,17 +65,16 @@ local function startInfiniteCastle()
     local startArgs = {{ { Dungeon = 3604563306, Event = "InfiniteCastleAction", Action = "Start" }, "\r" }}
     dataRemoteEvent:FireServer(unpack(startArgs))
     insideCastle = true
-    print("Castello avviato")
+    print("Infinite Castle started")
 end
 
 local function restartCastle()
     local leaveArgs = {{ { Event = "InfiniteCastleAction", Action = "Leave" }, "\r" }}
     dataRemoteEvent:FireServer(unpack(leaveArgs))
     insideCastle = false
-    print("Castello riavviato")
+    print("Infinite Castle restarted")
 end
 
--- Monitor Portal Destroyed
 dataRemoteEvent.OnClientEvent:Connect(function(...)
     if not autoRestartPortal then return end
     local args = {...}
@@ -91,7 +84,7 @@ dataRemoteEvent.OnClientEvent:Connect(function(...)
             if type(v) == "table" then
                 checkTable(v)
             elseif k == "Message" and tostring(v):upper():find("PORTAL DESTROYED") then
-                print("Portale distrutto! Riavvio castello...")
+                print("Portal destroyed! Restarting castle...")
                 restartCastle()
                 wait(3)
                 startInfiniteCastle()
@@ -103,36 +96,31 @@ dataRemoteEvent.OnClientEvent:Connect(function(...)
     end
 end)
 
--- Pulsante manuale per avviare InfCastle
 CastleTab:CreateButton({
-    Name = "Avvia InfCastle Manuale",
+    Name = "Start Infinite Castle (Manual)",
     Callback = function() startInfiniteCastle() end,
     Flag = "StartManualFlag"
 })
 
--- Loop continuo Stand in the Middle (solo dentro InfCastle)
 spawn(function()
     while true do
         wait(0.1)
-        if StandToggle:Get() and insideCastle and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+        if StandToggle:Get() and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
             player.Character.HumanoidRootPart.CFrame = middleCFrame
         end
     end
 end)
 
--- Teleport automatico anche al respawn (solo dentro InfCastle)
 player.CharacterAdded:Connect(function(char)
     wait(0.5)
-    if StandToggle:Get() and insideCastle and char:FindFirstChild("HumanoidRootPart") then
+    if StandToggle:Get() and char:FindFirstChild("HumanoidRootPart") then
         char.HumanoidRootPart.CFrame = middleCFrame
     end
 end)
 
--- Placeholder InfDesert
 DesertTab:CreateParagraph({
     Title = "Work in Progress",
-    Content = "Qui aggiungeremo i controlli per InfDesert."
+    Content = "Controls for InfDesert will be added here."
 })
 
--- Carica configurazione
 Rayfield:LoadConfiguration("InfiniteCastleHub")
