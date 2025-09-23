@@ -16,10 +16,11 @@ local Window = Rayfield:CreateWindow({
 
 local MainTab = Window:CreateTab("Main", 4483362458)
 
--- Toggle per Avvia Auto InfiniteCastle (stile switch)
+-- Toggle per Avvia Auto InfiniteCastle
 MainTab:CreateToggle({
     Name = "Auto InfiniteCastle",
     CurrentValue = false,
+    Flag = "AutoInfiniteCastleFlag",
     Callback = function(Value)
         autoStartEnabled = Value
         if autoStartEnabled then
@@ -37,16 +38,17 @@ MainTab:CreateSlider({
     Range = {1, 200},
     Increment = 1,
     CurrentValue = 5,
-    Flag = "RestartWave",
+    Flag = "RestartWaveFlag",
     Callback = function(Value)
         restartAtWave = Value
     end,
 })
 
--- Toggle per Auto-Restart Castle (stile switch)
+-- Toggle per Auto-Restart Castle
 MainTab:CreateToggle({
     Name = "Auto-Restart Castle",
     CurrentValue = false,
+    Flag = "AutoRestartCastleFlag",
     Callback = function(Value)
         autoRestartEnabled = Value
         if autoRestartEnabled then
@@ -72,42 +74,20 @@ MainTab:CreateToggle({
 function startInfiniteCastle()
     local ReplicatedStorage = game:GetService("ReplicatedStorage")
     local dataRemoteEvent = ReplicatedStorage:WaitForChild("BridgeNet2"):WaitForChild("dataRemoteEvent")
-    local createArgs = {
-        {
-            {
-                Event = "InfiniteCastleAction",
-                Action = "Create"
-            },
-            "\r"
-        }
-    }
+
+    local createArgs = {{ { Event = "InfiniteCastleAction", Action = "Create" }, "\r" }}
     dataRemoteEvent:FireServer(unpack(createArgs))
     wait(2)
-    local startArgs = {
-        {
-            {
-                Dungeon = 3604563306,
-                Event = "InfiniteCastleAction",
-                Action = "Start"
-            },
-            "\r"
-        }
-    }
+
+    local startArgs = {{ { Dungeon = 3604563306, Event = "InfiniteCastleAction", Action = "Start" }, "\r" }}
     dataRemoteEvent:FireServer(unpack(startArgs))
 end
 
 function restartCastle()
     local ReplicatedStorage = game:GetService("ReplicatedStorage")
     local dataRemoteEvent = ReplicatedStorage:WaitForChild("BridgeNet2"):WaitForChild("dataRemoteEvent")
-    local leaveArgs = {
-        {
-            {
-                Event = "InfiniteCastleAction",
-                Action = "Leave"
-            },
-            "\r"
-        }
-    }
+
+    local leaveArgs = {{ { Event = "InfiniteCastleAction", Action = "Leave" }, "\r" }}
     dataRemoteEvent:FireServer(unpack(leaveArgs))
     wait(2)
 end
@@ -115,7 +95,7 @@ end
 function getCurrentWave()
     local gui = game.Players.LocalPlayer.PlayerGui:FindFirstChild("InfiniteCastleGui")
     if gui then
-        for _,v in ipairs(gui:GetDescendants()) do
+        for _, v in ipairs(gui:GetDescendants()) do
             if v:IsA("TextLabel") and v.Name:lower():find("wave") and v.Text:match("%d+") then
                 return tonumber(v.Text:match("%d+"))
             end
