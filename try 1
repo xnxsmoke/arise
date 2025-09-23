@@ -2,7 +2,7 @@ local Rayfield = loadstring(game:HttpGet("https://sirius.menu/rayfield"))()
 
 local HttpService = game:GetService("HttpService")
 
--- CONFIG FILE (usa writefile/readfile se disponibili nell'executor)
+-- CONFIG FILE
 local configFileName = "InfiniteCastleHub_config.json"
 
 -- default values
@@ -10,7 +10,10 @@ local restartAtWave = 71
 local autoStartEnabled = false
 local autoRestartEnabled = false
 
--- Utility: load/save config to file (fallback se Rayfield non salva)
+-- internal state
+local insideCastle = false
+
+-- Utility: load/save config
 local function LoadConfig()
     if type(readfile) == "function" and pcall(function() return isfile(configFileName) end) and isfile(configFileName) then
         local ok, raw = pcall(function() return readfile(configFileName) end)
@@ -37,7 +40,7 @@ local function SaveConfig()
     end
 end
 
--- try to load saved config (if present)
+-- try to load saved config
 local loaded = LoadConfig()
 if loaded then
     restartAtWave = loaded.restartAtWave or restartAtWave
@@ -59,8 +62,11 @@ local MainTab = Window:CreateTab("Main", 4483362458)
 
 local autoRestartThreadRunning = false
 
--- Functions interacting with the game
+-- Functions
 function startInfiniteCastle()
+    if insideCastle then return end
+    insideCastle = true
+
     local ReplicatedStorage = game:GetService("ReplicatedStorage")
     local dataRemoteEvent = ReplicatedStorage:WaitForChild("BridgeNet2"):WaitForChild("dataRemoteEvent")
 
@@ -73,11 +79,13 @@ function startInfiniteCastle()
 end
 
 function restartCastle()
+    if not insideCastle then return end
     local ReplicatedStorage = game:GetService("ReplicatedStorage")
     local dataRemoteEvent = ReplicatedStorage:WaitForChild("BridgeNet2"):WaitForChild("dataRemoteEvent")
 
     local leaveArgs = {{ { Event = "InfiniteCastleAction", Action = "Leave" }, "\r" }}
     dataRemoteEvent:FireServer(unpack(leaveArgs))
+    insideCastle = false
     wait(2)
 end
 
@@ -95,35 +103,19 @@ function getCurrentWave()
     return 0
 end
 
-function isInInfiniteCastle()
-    local player = game.Players.LocalPlayer
-    if not player then return false end
-    local gui = player:FindFirstChild("PlayerGui") and player.PlayerGui:FindFirstChild("InfiniteCastleGui")
-    if gui then
-        local wave = getCurrentWave()
-        return wave and wave > 0
-    end
-    return false
-end
-
--- Auto-Restart loop (rispetta slider e previene loop)
+-- Auto-Restart loop basato sulla wave dello slider
 local function startAutoRestartLoop()
     if autoRestartThreadRunning then return end
     autoRestartThreadRunning = true
     spawn(function()
         while autoRestartEnabled do
             local wave = getCurrentWave()
-            -- legge restartAtWave corrente ad ogni iterazione
             if wave and wave >= restartAtWave then
-                Rayfield:Notify({Title="Restart!", Content="Raggiunta wave "..wave..". Riavvio...", Duration=3})
+                Rayfield:Notify({Title="Restart!", Content="Raggiunta wave "..wave..". Riavvio automatico...", Duration=3})
                 restartCastle()
-                -- aspetta di essere effettivamente fuori dal castello
-                repeat wait(1) until not isInInfiniteCastle()
-                wait(3)
-                -- entra solo se auto-start abilitato e non sei già dentro
-                if autoStartEnabled and not isInInfiniteCastle() then
-                    startInfiniteCastle()
-                end
+                wait(3)  -- breve pausa per uscire correttamente
+                startInfiniteCastle()
+                wait(5)  -- pausa per evitare loop immediati
             end
             wait(1)
         end
@@ -140,8 +132,8 @@ local AutoInfiniteToggle = MainTab:CreateToggle({
         autoStartEnabled = Value
         SaveConfig()
         if autoStartEnabled then
-            if isInInfiniteCastle() then
-                Rayfield:Notify({Title="Auto InfiniteCastle", Content="Sei già dentro all'Infinite Castle: avvio automatico disabilitato per evitare loop.", Duration=5})
+            if insideCastle then
+                Rayfield:Notify({Title="Auto InfiniteCastle", Content="Sei già dentro all'Infinite Castle: avvio automatico disabilitato.", Duration=5})
             else
                 Rayfield:Notify({Title="Auto InfiniteCastle", Content="Auto-InfiniteCastle avviato!", Duration=3})
                 startInfiniteCastle()
@@ -180,15 +172,11 @@ local AutoRestartToggle = MainTab:CreateToggle({
     end,
 })
 
--- Se la config caricata aveva i toggle attivi, avvia subito le funzioni senza creare loop
-if autoStartEnabled then
+-- Avvio iniziale
+if autoStartEnabled and not insideCastle then
     spawn(function()
         wait(0.5)
-        if isInInfiniteCastle() then
-            Rayfield:Notify({Title="Auto InfiniteCastle", Content="Config caricate: sei già dentro all'Infinite Castle. Non avvio l'Auto-Start per evitare loop.", Duration=5})
-        else
-            startInfiniteCastle()
-        end
+        startInfiniteCastle()
     end)
 end
 if autoRestartEnabled then
