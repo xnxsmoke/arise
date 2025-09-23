@@ -1,211 +1,101 @@
 local Rayfield = loadstring(game:HttpGet("https://sirius.menu/rayfield"))()
-
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local dataRemoteEvent = ReplicatedStorage:WaitForChild("BridgeNet2"):WaitForChild("dataRemoteEvent")
 local Players = game:GetService("Players")
 local player = Players.LocalPlayer
+local dataRemoteEvent = ReplicatedStorage:WaitForChild("BridgeNet2"):WaitForChild("dataRemoteEvent")
+
+-- Coordinates
+local castleCFrame = CFrame.new(432.6329, 4384.6372, -1898.6741)
+local desertCFrame = CFrame.new(463.8988, 4383.7646, -1888.2440)
 
 -- Window
 local Window = Rayfield:CreateWindow({
     Name = "xnxsmoke Hub",
     LoadingTitle = "xnxsmoke Loader",
     LoadingSubtitle = "by xnxsmoke",
-    ConfigurationSaving = {
-        Enabled = true,
-        FileName = "InfiniteModesHub",
-        AutoSave = true
-    },
+    ConfigurationSaving = { Enabled = true, FileName = "InfiniteModesHub", AutoSave = true },
 })
 
--- Tabs
 local CastleTab = Window:CreateTab("InfCastle", 4483362458)
 local DesertTab = Window:CreateTab("InfDesert", 4483362458)
 
--- Stand in the Middle coordinates
-local middleCFrame = CFrame.new(432.6329, 4384.6372, -1898.6741)
-
--- Internal states
-local insideCastle = false
-local insideDesert = false
-local autoRestartCastle = false
-local autoRestartDesert = false
-
--- ---------- INFCASTLE ----------
-CastleTab:CreateToggle({
-    Name = "Auto-Restart on Portal Destroyed",
-    CurrentValue = false,
-    Flag = "AutoRestartCastleFlag",
-    Callback = function(Value)
-        autoRestartCastle = Value
-        Rayfield:Notify({
-            Title = "Auto-Restart Castle",
-            Content = Value and "Enabled!" or "Disabled!",
-            Duration = 3
-        })
-    end
-})
-
-local CastleStandToggle = CastleTab:CreateToggle({
-    Name = "Stand in the Middle (InfCastle)",
-    CurrentValue = false,
-    Flag = "StandCastleFlag",
-    Callback = function(Value)
-        if Value and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-            player.Character.HumanoidRootPart.CFrame = middleCFrame
-            Rayfield:Notify({
-                Title = "Stand in the Middle",
-                Content = "Teleported to center of InfCastle!",
-                Duration = 3
-            })
-        end
-    end
-})
-
-local function startInfiniteCastle()
-    if insideCastle then return end
-    dataRemoteEvent:FireServer({{ { Event = "InfiniteCastleAction", Action = "Create" }, "\r" }})
-    wait(2)
-    dataRemoteEvent:FireServer({{ { Dungeon = 3604563306, Event = "InfiniteCastleAction", Action = "Start" }, "\r" }})
-    insideCastle = true
-    print("Infinite Castle started")
-    wait(3)
-    if CastleStandToggle:Get() then
-        player.Character.HumanoidRootPart.CFrame = middleCFrame
+-- Helpers
+local function standAt(cframe)
+    local char = player.Character
+    if char and char:FindFirstChild("HumanoidRootPart") then
+        char.HumanoidRootPart.CFrame = cframe
     end
 end
 
-local function restartCastle()
-    if not insideCastle then return end
-    dataRemoteEvent:FireServer({{ { Event = "InfiniteCastleAction", Action = "Leave" }, "\r" }})
-    insideCastle = false
-    print("Infinite Castle restarted")
-end
+local startingDungeon = false
+local standCastleEnabled = false
+local standDesertEnabled = false
 
-dataRemoteEvent.OnClientEvent:Connect(function(...)
-    if not autoRestartCastle then return end
-    local args = {...}
-    local function checkTable(tbl)
-        if type(tbl) ~= "table" then return end
-        for k,v in pairs(tbl) do
-            if type(v) == "table" then
-                checkTable(v)
-            elseif k == "Message" and tostring(v):upper():find("PORTAL DESTROYED") then
-                print("Castle portal destroyed! Restarting...")
-                restartCastle()
-                wait(3)
-                startInfiniteCastle()
-            end
-        end
-    end
-    for _,v in ipairs(args) do
-        checkTable(v)
-    end
-end)
-
+-- INFCASTLE
 CastleTab:CreateButton({
     Name = "Start Infinite Castle (Manual)",
-    Callback = function() startInfiniteCastle() end,
-    Flag = "StartManualCastleFlag"
+    Callback = function()
+        if startingDungeon then return end
+        startingDungeon = true
+        local argsCreate = { { { Event = "InfiniteCastleAction", Action = "Create" }, "\r" } }
+        dataRemoteEvent:FireServer(unpack(argsCreate))
+        task.wait(1)
+        local argsStart = { { { Dungeon = 3604563306, Event = "InfiniteCastleAction", Action = "Start" }, "\r" } }
+        dataRemoteEvent:FireServer(unpack(argsStart))
+        print("Infinite Castle started")
+        startingDungeon = false
+    end
 })
 
--- ---------- INFDESERT ----------
-DesertTab:CreateToggle({
-    Name = "Auto-Reset on Portal Destroyed",
+CastleTab:CreateToggle({
+    Name = "Stand in the Middle (Use only in InfCastle)",
     CurrentValue = false,
-    Flag = "AutoRestartDesertFlag",
-    Callback = function(Value)
-        autoRestartDesert = Value
-        Rayfield:Notify({
-            Title = "Auto-Reset Desert",
-            Content = Value and "Enabled!" or "Disabled!",
-            Duration = 3
-        })
-    end
+    Flag = "StandCastleFlag",
+    Callback = function(Value) standCastleEnabled = Value end
 })
 
-local DesertStandToggle = DesertTab:CreateToggle({
-    Name = "Stand in the Middle (InfDesert)",
-    CurrentValue = false,
-    Flag = "StandDesertFlag",
-    Callback = function(Value)
-        if Value and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-            player.Character.HumanoidRootPart.CFrame = middleCFrame
-            Rayfield:Notify({
-                Title = "Stand in the Middle",
-                Content = "Teleported to center of InfDesert!",
-                Duration = 3
-            })
-        end
-    end
-})
-
-local function startInfiniteDesert()
-    if insideDesert then return end
-    dataRemoteEvent:FireServer({{ { Event = "InfiniteModeAction", Action = "Create" }, "\r" }})
-    wait(2)
-    dataRemoteEvent:FireServer({{ { Dungeon = 3604563306, Event = "InfiniteModeAction", Action = "Start" }, "\r" }})
-    insideDesert = true
-    print("Infinite Desert started")
-    wait(3)
-    if DesertStandToggle:Get() then
-        player.Character.HumanoidRootPart.CFrame = middleCFrame
-    end
-end
-
-local function restartDesert()
-    if not insideDesert then return end
-    dataRemoteEvent:FireServer({{ { Event = "InfiniteModeAction", Action = "Leave" }, "\r" }})
-    insideDesert = false
-    print("Infinite Desert restarted")
-end
-
-dataRemoteEvent.OnClientEvent:Connect(function(...)
-    if not autoRestartDesert then return end
-    local args = {...}
-    local function checkTable(tbl)
-        if type(tbl) ~= "table" then return end
-        for k,v in pairs(tbl) do
-            if type(v) == "table" then
-                checkTable(v)
-            elseif k == "Message" and tostring(v):upper():find("PORTAL DESTROYED") then
-                print("Desert portal destroyed! Resetting...")
-                restartDesert()
-                wait(3)
-                startInfiniteDesert()
-            end
-        end
-    end
-    for _,v in ipairs(args) do
-        checkTable(v)
-    end
-end)
-
+-- INFDESERT
 DesertTab:CreateButton({
     Name = "Start Infinite Desert (Manual)",
-    Callback = function() startInfiniteDesert() end,
-    Flag = "StartManualDesertFlag"
+    Callback = function()
+        if startingDungeon then return end
+        startingDungeon = true
+        local argsCreate = { { { Event = "InfiniteModeAction", Action = "Create" }, "\r" } }
+        dataRemoteEvent:FireServer(unpack(argsCreate))
+        task.wait(1)
+        local argsStart = { { { Dungeon = 3604563306, Event = "InfiniteModeAction", Action = "Start" }, "\r" } }
+        dataRemoteEvent:FireServer(unpack(argsStart))
+        print("Infinite Desert started")
+        startingDungeon = false
+    end
 })
 
--- Continuous Stand in the Middle loop
-spawn(function()
+DesertTab:CreateToggle({
+    Name = "Stand in the Middle (Use only in InfDesert)",
+    CurrentValue = false,
+    Flag = "StandDesertFlag",
+    Callback = function(Value) standDesertEnabled = Value end
+})
+
+-- Stand loop
+task.spawn(function()
     while true do
-        wait(0.1)
-        if CastleStandToggle:Get() and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-            player.Character.HumanoidRootPart.CFrame = middleCFrame
-        end
-        if DesertStandToggle:Get() and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-            player.Character.HumanoidRootPart.CFrame = middleCFrame
+        task.wait(0.3)
+        if standCastleEnabled then
+            standAt(castleCFrame)
+        elseif standDesertEnabled then
+            standAt(desertCFrame)
         end
     end
 end)
 
-player.CharacterAdded:Connect(function(char)
-    wait(0.5)
-    if CastleStandToggle:Get() and char:FindFirstChild("HumanoidRootPart") then
-        char.HumanoidRootPart.CFrame = middleCFrame
-    end
-    if DesertStandToggle:Get() and char:FindFirstChild("HumanoidRootPart") then
-        char.HumanoidRootPart.CFrame = middleCFrame
+-- Auto reposition on respawn
+player.CharacterAdded:Connect(function()
+    task.wait(1)
+    if standCastleEnabled then
+        standAt(castleCFrame)
+    elseif standDesertEnabled then
+        standAt(desertCFrame)
     end
 end)
 
