@@ -40,23 +40,13 @@ local StandToggle = CastleTab:CreateToggle({
     CurrentValue = false,
     Flag = "StandInMiddleFlag",
     Callback = function(Value)
-        if Value then
-            Rayfield:Notify({
-                Title = "Stand in the Middle",
-                Content = "Enabled!",
-                Duration = 3
-            })
-        else
-            Rayfield:Notify({
-                Title = "Stand in the Middle",
-                Content = "Disabled.",
-                Duration = 3
-            })
-        end
+        Rayfield:Notify({
+            Title = "Stand in the Middle",
+            Content = Value and "Enabled!" or "Disabled!",
+            Duration = 3
+        })
     end
 })
-
-local insideCastle = false
 
 local function startInfiniteCastle()
     local createArgs = {{ { Event = "InfiniteCastleAction", Action = "Create" }, "\r" }}
@@ -64,14 +54,12 @@ local function startInfiniteCastle()
     wait(2)
     local startArgs = {{ { Dungeon = 3604563306, Event = "InfiniteCastleAction", Action = "Start" }, "\r" }}
     dataRemoteEvent:FireServer(unpack(startArgs))
-    insideCastle = true
     print("Infinite Castle started")
 end
 
 local function restartCastle()
     local leaveArgs = {{ { Event = "InfiniteCastleAction", Action = "Leave" }, "\r" }}
     dataRemoteEvent:FireServer(unpack(leaveArgs))
-    insideCastle = false
     print("Infinite Castle restarted")
 end
 
