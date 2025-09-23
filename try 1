@@ -126,17 +126,11 @@ dataRemoteEvent.OnClientEvent:Connect(function(...)
     end
 end)
 
--- Pulsanti manuali per Castle
+-- Pulsante manuale per avviare InfCastle
 CastleTab:CreateButton({
     Name = "Avvia InfCastle Manuale",
     Callback = function() startInfiniteCastle() end,
     Flag = "StartManualFlag"
-})
-
-CastleTab:CreateButton({
-    Name = "Riavvia InfCastle Manuale",
-    Callback = function() restartCastle() end,
-    Flag = "RestartManualFlag"
 })
 
 -- Placeholder per InfDesert
