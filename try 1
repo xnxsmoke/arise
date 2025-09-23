@@ -47,7 +47,7 @@ local StandToggle = CastleTab:CreateToggle({
         if Value then
             Rayfield:Notify({
                 Title = "Stand in the Middle",
-                Content = "Attivo! Teletrasporto al centro quando possibile.",
+                Content = "Attivo! Teletrasporto al centro solo dentro InfCastle.",
                 Duration = 3
             })
         else
@@ -60,6 +60,9 @@ local StandToggle = CastleTab:CreateToggle({
     end
 })
 
+-- Variabile interna per capire se sei dentro il castello
+local insideCastle = false
+
 -- Funzioni principali
 local function startInfiniteCastle()
     local createArgs = {{ { Event = "InfiniteCastleAction", Action = "Create" }, "\r" }}
@@ -67,12 +70,14 @@ local function startInfiniteCastle()
     wait(2)
     local startArgs = {{ { Dungeon = 3604563306, Event = "InfiniteCastleAction", Action = "Start" }, "\r" }}
     dataRemoteEvent:FireServer(unpack(startArgs))
+    insideCastle = true
     print("Castello avviato")
 end
 
 local function restartCastle()
     local leaveArgs = {{ { Event = "InfiniteCastleAction", Action = "Leave" }, "\r" }}
     dataRemoteEvent:FireServer(unpack(leaveArgs))
+    insideCastle = false
     print("Castello riavviato")
 end
 
@@ -105,20 +110,20 @@ CastleTab:CreateButton({
     Flag = "StartManualFlag"
 })
 
--- Loop continuo Stand in the Middle
+-- Loop continuo Stand in the Middle (solo dentro InfCastle)
 spawn(function()
     while true do
         wait(0.1)
-        if StandToggle:Get() and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+        if StandToggle:Get() and insideCastle and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
             player.Character.HumanoidRootPart.CFrame = middleCFrame
         end
     end
 end)
 
--- Teleport automatico al respawn
+-- Teleport automatico anche al respawn (solo dentro InfCastle)
 player.CharacterAdded:Connect(function(char)
     wait(0.5)
-    if StandToggle:Get() and char:FindFirstChild("HumanoidRootPart") then
+    if StandToggle:Get() and insideCastle and char:FindFirstChild("HumanoidRootPart") then
         char.HumanoidRootPart.CFrame = middleCFrame
     end
 end)
