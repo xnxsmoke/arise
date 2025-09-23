@@ -40,39 +40,38 @@ local PortalToggle = CastleTab:CreateToggle({
     end,
 })
 
--- Toggle Stand in the Middle (solo dentro InfCastle)
+-- Toggle Stand in the Middle
 local middleCFrame = CFrame.new(Vector3.new(432.6329, 4384.6372, -1898.6741))
-
 local StandToggle
 StandToggle = CastleTab:CreateToggle({
     Name = "Stand in the Middle",
     CurrentValue = false,
     Flag = "StandInMiddleFlag",
     Callback = function(Value)
-        if Value then
-            if not insideCastle then
-                -- Se siamo fuori dal castello, non teletrasportare
-                Rayfield:Notify({
-                    Title = "Stand in the Middle",
-                    Content = "Funziona solo dentro l'InfCastle!",
-                    Duration = 3
-                })
-                return
-            end
-
-            -- Teletrasporto al centro solo se siamo dentro
-            local player = game.Players.LocalPlayer
-            if player and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-                player.Character.HumanoidRootPart.CFrame = middleCFrame
-                Rayfield:Notify({
-                    Title = "Stand in the Middle",
-                    Content = "Sei stato teletrasportato al centro!",
-                    Duration = 3
-                })
-            end
+        if not insideCastle and Value then
+            Rayfield:Notify({
+                Title = "Stand in the Middle",
+                Content = "Funziona solo dentro l'InfCastle!",
+                Duration = 3
+            })
         end
     end,
 })
+
+-- Funzione per teletrasportare al centro solo se toggle attivo
+local function tryStandInMiddle()
+    if StandToggle:Get() and insideCastle then
+        local player = game.Players.LocalPlayer
+        if player and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+            player.Character.HumanoidRootPart.CFrame = middleCFrame
+            Rayfield:Notify({
+                Title = "Stand in the Middle",
+                Content = "Sei stato teletrasportato al centro!",
+                Duration = 3
+            })
+        end
+    end
+end
 
 -- Carica la configurazione dopo aver creato GUI e toggle
 Rayfield:LoadConfiguration("InfiniteCastleHub")
@@ -89,11 +88,8 @@ local function startInfiniteCastle()
     print("Castello avviato")
 
     wait(3)
-    -- Teleport automatico al centro del castello
-    local player = game.Players.LocalPlayer
-    if player and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-        player.Character.HumanoidRootPart.CFrame = middleCFrame
-    end
+    -- Teleporto al centro solo se toggle Stand in the Middle è attivo
+    tryStandInMiddle()
 end
 
 local function restartCastle()
