@@ -1,15 +1,15 @@
 local Rayfield = loadstring(game:HttpGet("https://sirius.menu/rayfield"))()
 
--- Configurazione tempo stimato per wave 10 (in secondi)
-local tempoStimatoPerWave10 = 120 -- puoi modificare in base alla tua esperienza
-
 -- Stato interno
-local autoRestartEnabled = false
+local insideCastle = false
+local autoRestartPortal = false
 
--- Funzioni per avviare e riavviare il castello
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local dataRemoteEvent = ReplicatedStorage:WaitForChild("BridgeNet2"):WaitForChild("dataRemoteEvent")
+
+-- Funzioni principali
 local function startInfiniteCastle()
-    local ReplicatedStorage = game:GetService("ReplicatedStorage")
-    local dataRemoteEvent = ReplicatedStorage:WaitForChild("BridgeNet2"):WaitForChild("dataRemoteEvent")
+    if insideCastle then return end
 
     local createArgs = {{ { Event = "InfiniteCastleAction", Action = "Create" }, "\r" }}
     dataRemoteEvent:FireServer(unpack(createArgs))
@@ -17,60 +17,79 @@ local function startInfiniteCastle()
 
     local startArgs = {{ { Dungeon = 3604563306, Event = "InfiniteCastleAction", Action = "Start" }, "\r" }}
     dataRemoteEvent:FireServer(unpack(startArgs))
+
+    insideCastle = true
     print("Castello avviato")
 end
 
 local function restartCastle()
-    local ReplicatedStorage = game:GetService("ReplicatedStorage")
-    local dataRemoteEvent = ReplicatedStorage:WaitForChild("BridgeNet2"):WaitForChild("dataRemoteEvent")
+    if not insideCastle then return end
 
     local leaveArgs = {{ { Event = "InfiniteCastleAction", Action = "Leave" }, "\r" }}
     dataRemoteEvent:FireServer(unpack(leaveArgs))
+
+    insideCastle = false
     print("Castello riavviato")
 end
+
+-- Monitor portal destroyed
+dataRemoteEvent.OnClientEvent:Connect(function(...)
+    if not autoRestartPortal then return end
+    local args = {...}
+    local function checkTable(tbl)
+        if type(tbl) ~= "table" then return end
+        for k, val in pairs(tbl) do
+            if type(val) == "table" then
+                checkTable(val)
+            elseif k == "Message" and tostring(val):upper():find("PORTAL DESTROYED") then
+                print("Portale distrutto rilevato! Riavvio castello...")
+                restartCastle()
+                wait(3)
+                startInfiniteCastle()
+            end
+        end
+    end
+    for _, v in ipairs(args) do
+        checkTable(v)
+    end
+end)
 
 -- UI
 local Window = Rayfield:CreateWindow({
     Name = "InfiniteCastle Hub",
     LoadingTitle = "InfiniteCastle Loader",
     LoadingSubtitle = "by xnxsmoke",
-    ConfigurationSaving = {
-        Enabled = true,
-        FileName = "InfiniteCastleHub"
-    },
+    ConfigurationSaving = { Enabled = true, FileName = "InfiniteCastleHub" },
 })
 
 local MainTab = Window:CreateTab("Main", 4483362458)
 
-local AutoRestartToggle = MainTab:CreateToggle({
-    Name = "Auto-Restart basato sul tempo",
+-- Toggle auto-restart portal
+local PortalToggle = MainTab:CreateToggle({
+    Name = "Auto-Restart Portal",
     CurrentValue = false,
-    Flag = "AutoRestartTimeFlag",
+    Flag = "AutoRestartPortalFlag",
     Callback = function(Value)
-        autoRestartEnabled = Value
-        if autoRestartEnabled then
-            Rayfield:Notify({Title="Auto-Restart", Content="Auto-Restart attivato!", Duration=3})
-            spawn(function()
-                while autoRestartEnabled do
-                    startInfiniteCastle()
-                    wait(tempoStimatoPerWave10)
-                    restartCastle()
-                    wait(3) -- breve pausa
-                end
-            end)
+        autoRestartPortal = Value
+        if Value then
+            Rayfield:Notify({Title="Auto-Restart", Content="Attivato!", Duration=3})
         else
-            Rayfield:Notify({Title="Auto-Restart", Content="Auto-Restart fermato!", Duration=3})
+            Rayfield:Notify({Title="Auto-Restart", Content="Disattivato!", Duration=3})
         end
     end,
 })
 
-local TimeSlider = MainTab:CreateSlider({
-    Name = "Tempo stimato (sec)",
-    Range = {10, 600},
-    Increment = 5,
-    CurrentValue = tempoStimatoPerWave10,
-    Flag = "TempoStimatoFlag",
-    Callback = function(Value)
-        tempoStimatoPerWave10 = Value
-    end,
+-- Pulsante manuale start/restart
+MainTab:CreateButton({
+    Name = "Avvia Castello Manuale",
+    Callback = function()
+        startInfiniteCastle()
+    end
+})
+
+MainTab:CreateButton({
+    Name = "Riavvia Castello Manuale",
+    Callback = function()
+        restartCastle()
+    end
 })
