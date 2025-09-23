@@ -43,6 +43,16 @@ local PortalToggle = CastleTab:CreateToggle({
 -- Carica la configurazione dopo aver creato GUI e toggle
 Rayfield:LoadConfiguration("InfiniteCastleHub")
 
+-- Funzione per teletrasportare il personaggio al punto desiderato
+local function teleportToCastlePoint()
+    local player = game.Players.LocalPlayer
+    local char = player.Character or player.CharacterAdded:Wait()
+    local hrp = char:WaitForChild("HumanoidRootPart")
+
+    -- Coordinate che mi hai dato
+    hrp.CFrame = CFrame.new(Vector3.new(432.6329, 4384.6372, -1898.6741))
+end
+
 -- Funzioni principali
 local function startInfiniteCastle()
     if insideCastle then return end
@@ -53,6 +63,10 @@ local function startInfiniteCastle()
     dataRemoteEvent:FireServer(unpack(startArgs))
     insideCastle = true
     print("Castello avviato")
+
+    -- Teleport automatico al punto scelto
+    wait(3) -- piccolo delay per sicurezza
+    teleportToCastlePoint()
 end
 
 local function restartCastle()
