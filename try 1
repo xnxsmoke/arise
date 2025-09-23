@@ -34,6 +34,8 @@ CastleTab:CreateToggle({
     end
 })
 
+Rayfield:LoadConfiguration("InfiniteCastleHub")
+
 local middleCFrame = CFrame.new(432.6329, 4384.6372, -1898.6741)
 local StandToggle = CastleTab:CreateToggle({
     Name = "Stand in the Middle (use only in InfCastle)",
@@ -48,18 +50,34 @@ local StandToggle = CastleTab:CreateToggle({
     end
 })
 
+local insideCastle = false
+
+local function teleportToCastlePoint()
+    local char = player.Character or player.CharacterAdded:Wait()
+    local hrp = char:WaitForChild("HumanoidRootPart")
+    hrp.CFrame = middleCFrame
+end
+
 local function startInfiniteCastle()
+    if insideCastle then return end
     local createArgs = {{ { Event = "InfiniteCastleAction", Action = "Create" }, "\r" }}
     dataRemoteEvent:FireServer(unpack(createArgs))
     wait(2)
     local startArgs = {{ { Dungeon = 3604563306, Event = "InfiniteCastleAction", Action = "Start" }, "\r" }}
     dataRemoteEvent:FireServer(unpack(startArgs))
+    insideCastle = true
     print("Infinite Castle started")
+    wait(3)
+    if StandToggle:Get() then
+        teleportToCastlePoint()
+    end
 end
 
 local function restartCastle()
+    if not insideCastle then return end
     local leaveArgs = {{ { Event = "InfiniteCastleAction", Action = "Leave" }, "\r" }}
     dataRemoteEvent:FireServer(unpack(leaveArgs))
+    insideCastle = false
     print("Infinite Castle restarted")
 end
 
@@ -68,10 +86,10 @@ dataRemoteEvent.OnClientEvent:Connect(function(...)
     local args = {...}
     local function checkTable(tbl)
         if type(tbl) ~= "table" then return end
-        for k,v in pairs(tbl) do
-            if type(v) == "table" then
-                checkTable(v)
-            elseif k == "Message" and tostring(v):upper():find("PORTAL DESTROYED") then
+        for k,val in pairs(tbl) do
+            if type(val) == "table" then
+                checkTable(val)
+            elseif k == "Message" and tostring(val):upper():find("PORTAL DESTROYED") then
                 print("Portal destroyed! Restarting castle...")
                 restartCastle()
                 wait(3)
@@ -90,7 +108,6 @@ CastleTab:CreateButton({
     Flag = "StartManualFlag"
 })
 
--- First version Stand in the Middle loop (works always)
 spawn(function()
     while true do
         wait(0.1)
@@ -111,5 +128,3 @@ DesertTab:CreateParagraph({
     Title = "Work in Progress",
     Content = "Controls for InfDesert will be added here."
 })
-
-Rayfield:LoadConfiguration("InfiniteCastleHub")
