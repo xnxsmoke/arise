@@ -17,7 +17,8 @@ local Window = Rayfield:CreateWindow({
 local CastleTab = Window:CreateTab("InfCastle", 4483362458)
 local DesertTab = Window:CreateTab("InfDesert", 4483362458)
 
-local startingDungeon = false
+local startingCastle = false
+local startingDesert = false
 local standCastleEnabled = false
 local standDesertEnabled = false
 local autoRestartCastleEnabled = false
@@ -38,32 +39,32 @@ local function safeFire(args)
 end
 
 local function startInfiniteCastle()
-    if startingDungeon then return end
-    startingDungeon = true
+    if startingCastle then return end
+    startingCastle = true
     safeFire({ { { Event = "InfiniteCastleAction", Action = "Create" } } })
     task.wait(1)
     safeFire({ { { Dungeon = 3604563306, Event = "InfiniteCastleAction", Action = "Start" } } })
     task.wait(2)
-    startingDungeon = false
+    startingCastle = false
 end
 
 local function startInfiniteDesert()
-    if startingDungeon then return end
-    startingDungeon = true
+    if startingDesert then return end
+    startingDesert = true
     safeFire({ { { Event = "InfiniteModeAction", Action = "Create" } } })
     task.wait(1)
     safeFire({ { { Dungeon = 3604563306, Event = "InfiniteModeAction", Action = "Start" } } })
     task.wait(2)
-    startingDungeon = false
+    startingDesert = false
 end
 
 local function restartInfiniteCastleSequence()
     if tick() - lastRestartCastle < RESTART_COOLDOWN then return end
-    if startingDungeon then
+    if startingCastle then
         task.spawn(function() task.wait(1) restartInfiniteCastleSequence() end)
         return
     end
-    startingDungeon = true
+    startingCastle = true
     safeFire({ { { Event = "InfiniteCastleAction", Action = "Leave" } } })
     task.wait(1.6)
     safeFire({ { { Event = "InfiniteCastleAction", Action = "Create" } } })
@@ -71,16 +72,16 @@ local function restartInfiniteCastleSequence()
     safeFire({ { { Dungeon = 3604563306, Event = "InfiniteCastleAction", Action = "Start" } } })
     lastRestartCastle = tick()
     task.wait(2)
-    startingDungeon = false
+    startingCastle = false
 end
 
 local function restartInfiniteDesertSequence()
     if tick() - lastRestartDesert < RESTART_COOLDOWN then return end
-    if startingDungeon then
+    if startingDesert then
         task.spawn(function() task.wait(1) restartInfiniteDesertSequence() end)
         return
     end
-    startingDungeon = true
+    startingDesert = true
     safeFire({ { { Event = "InfiniteModeAction", Action = "Leave" } } })
     task.wait(1.6)
     safeFire({ { { Event = "InfiniteModeAction", Action = "Create" } } })
@@ -88,7 +89,7 @@ local function restartInfiniteDesertSequence()
     safeFire({ { { Dungeon = 3604563306, Event = "InfiniteModeAction", Action = "Start" } } })
     lastRestartDesert = tick()
     task.wait(2)
-    startingDungeon = false
+    startingDesert = false
 end
 
 CastleTab:CreateButton({
@@ -111,7 +112,7 @@ CastleTab:CreateToggle({
     Flag = "StandCastleFlag",
     Callback = function(Value)
         standCastleEnabled = Value
-        if Value then safeStandAt(castleCFrame) end
+        if Value and not startingCastle then safeStandAt(castleCFrame) end
     end
 })
 
@@ -135,16 +136,16 @@ DesertTab:CreateToggle({
     Flag = "StandDesertFlag",
     Callback = function(Value)
         standDesertEnabled = Value
-        if Value then safeStandAt(desertCFrame) end
+        if Value and not startingDesert then safeStandAt(desertCFrame) end
     end
 })
 
 task.spawn(function()
     while true do
         task.wait(0.25)
-        if standCastleEnabled then
+        if standCastleEnabled and not startingCastle then
             safeStandAt(castleCFrame)
-        elseif standDesertEnabled then
+        elseif standDesertEnabled and not startingDesert then
             safeStandAt(desertCFrame)
         end
     end
@@ -152,8 +153,8 @@ end)
 
 player.CharacterAdded:Connect(function()
     task.wait(0.8)
-    if standCastleEnabled then safeStandAt(castleCFrame) end
-    if standDesertEnabled then safeStandAt(desertCFrame) end
+    if standCastleEnabled and not startingCastle then safeStandAt(castleCFrame) end
+    if standDesertEnabled and not startingDesert then safeStandAt(desertCFrame) end
 end)
 
 dataRemoteEvent.OnClientEvent:Connect(function(...)
