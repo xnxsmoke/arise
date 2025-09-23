@@ -59,10 +59,29 @@ local Window = Rayfield:CreateWindow({
     Name = "InfiniteCastle Hub",
     LoadingTitle = "InfiniteCastle Loader",
     LoadingSubtitle = "by xnxsmoke",
-    ConfigurationSaving = { Enabled = true, FileName = "InfiniteCastleHub", AutoSave = true },
+    ConfigurationSaving = {
+        Enabled = true,
+        FileName = "InfiniteCastleHub",
+        AutoSave = true
+    },
 })
 
 local MainTab = Window:CreateTab("Main", 4483362458)
+
+-- Toggle auto-restart portal con flag per salvataggio
+local PortalToggle = MainTab:CreateToggle({
+    Name = "Auto-Restart alla distruzione del portale",
+    CurrentValue = false,
+    Flag = "AutoRestartPortalFlag", -- necessario per il salvataggio
+    Callback = function(Value)
+        autoRestartPortal = Value
+        if Value then
+            Rayfield:Notify({Title="Auto-Restart", Content="Attivato!", Duration=3})
+        else
+            Rayfield:Notify({Title="Auto-Restart", Content="Disattivato!", Duration=3})
+        end
+    end,
+})
 
 -- Pulsante manuale per avviare il castello
 MainTab:CreateButton({
@@ -72,17 +91,10 @@ MainTab:CreateButton({
     end
 })
 
--- Toggle auto-restart portal
-local PortalToggle = MainTab:CreateToggle({
-    Name = "Auto-Restart alla distruzione del portale",
-    CurrentValue = false,
-    Flag = "AutoRestartPortalFlag",
-    Callback = function(Value)
-        autoRestartPortal = Value
-        if Value then
-            Rayfield:Notify({Title="Auto-Restart", Content="Attivato!", Duration=3})
-        else
-            Rayfield:Notify({Title="Auto-Restart", Content="Disattivato!", Duration=3})
-        end
-    end,
+-- Pulsante manuale per riavviare il castello
+MainTab:CreateButton({
+    Name = "Riavvia InfCastle Manuale",
+    Callback = function()
+        restartCastle()
+    end
 })
