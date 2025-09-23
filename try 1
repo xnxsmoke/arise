@@ -2,7 +2,7 @@ local Rayfield = loadstring(game:HttpGet("https://sirius.menu/rayfield"))()
 
 -- Stato interno
 local insideCastle = false
-local autoRestartPortal = false
+local autoRestartPortal -- lasciato nil, sarà gestito dalla GUI Rayfield
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local dataRemoteEvent = ReplicatedStorage:WaitForChild("BridgeNet2"):WaitForChild("dataRemoteEvent")
@@ -71,8 +71,8 @@ local MainTab = Window:CreateTab("Main", 4483362458)
 -- Toggle auto-restart portal con Flag per salvataggio automatico
 local PortalToggle = MainTab:CreateToggle({
     Name = "Auto-Restart alla distruzione del portale",
-    CurrentValue = false,
-    Flag = "AutoRestartPortalFlag", -- fondamentale per salvare la config
+    CurrentValue = false, -- default iniziale, sarà sovrascritto dalla config salvata
+    Flag = "AutoRestartPortalFlag", -- fondamentale per salvare e caricare la config
     Callback = function(Value)
         autoRestartPortal = Value
         if Value then
@@ -101,4 +101,5 @@ MainTab:CreateButton({
     Flag = "RestartManualFlag" -- opzionale, solo per salvataggio eventuale
 })
 
--- Auto-execute ready: tutte le impostazioni e i toggle saranno salvati e ripristinati automaticamente
+-- Ora la variabile autoRestartPortal verrà inizializzata correttamente dal toggle salvato,
+-- anche quando lo script è eseguito automaticamente tramite auto-execute.
