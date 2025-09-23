@@ -19,9 +19,7 @@ local Window = Rayfield:CreateWindow({
 local CastleTab = Window:CreateTab("InfCastle", 4483362458)
 local DesertTab = Window:CreateTab("InfDesert", 4483362458)
 
--- ---------- Stato Dungeon ----------
-local insideCastle = false
-local insideDesert = false
+-- ---------- Flags ----------
 local standCastleEnabled = false
 local standDesertEnabled = false
 local autoRestartCastle = false
@@ -41,42 +39,32 @@ end
 
 -- ---------- InfCastle ----------
 local function startCastle()
-    if insideCastle then return end
-    insideCastle = true
     fireSafe({ { { Event = "InfiniteCastleAction", Action = "Create" }, "\r" } })
     task.wait(1)
     fireSafe({ { { Dungeon = 3604563306, Event = "InfiniteCastleAction", Action = "Start" }, "\r" } })
     task.wait(1)
+    if standCastleEnabled then
+        safeStandAt(castleCFrame)
+    end
 end
 
 local function restartCastle()
-    if not insideCastle then return end
     fireSafe({ { { Event = "InfiniteCastleAction", Action = "Leave" }, "\r" } })
     task.wait(1.5)
-    insideCastle = false
     startCastle()
 end
 
--- Toggle Stand in the Middle Castle
+-- InfCastle GUI
+CastleTab:CreateButton({ Name = "Start Infinite Castle (Manual)", Callback = startCastle })
 CastleTab:CreateToggle({
     Name = "Stand in the Middle (InfCastle) - Use only in InfCastle",
     CurrentValue = false,
     Flag = "StandCastleFlag",
     Callback = function(Value)
         standCastleEnabled = Value
-        if Value and insideCastle then
-            safeStandAt(castleCFrame)
-        end
+        if Value then safeStandAt(castleCFrame) end
     end
 })
-
--- Manual Start Castle
-CastleTab:CreateButton({
-    Name = "Start Infinite Castle (Manual)",
-    Callback = startCastle
-})
-
--- Auto-Restart Castle
 CastleTab:CreateToggle({
     Name = "Auto-Restart (on Portal Destroyed)",
     CurrentValue = false,
@@ -86,42 +74,32 @@ CastleTab:CreateToggle({
 
 -- ---------- InfDesert ----------
 local function startDesert()
-    if insideDesert then return end
-    insideDesert = true
     fireSafe({ { { Event = "InfiniteModeAction", Action = "Create" }, "\r" } })
     task.wait(1)
     fireSafe({ { { Dungeon = 3604563306, Event = "InfiniteModeAction", Action = "Start" }, "\r" } })
     task.wait(1)
+    if standDesertEnabled then
+        safeStandAt(desertCFrame)
+    end
 end
 
 local function restartDesert()
-    if not insideDesert then return end
     fireSafe({ { { Event = "InfiniteModeAction", Action = "Leave" }, "\r" } })
     task.wait(1.5)
-    insideDesert = false
     startDesert()
 end
 
--- Toggle Stand in the Middle Desert
+-- InfDesert GUI
+DesertTab:CreateButton({ Name = "Start Infinite Desert (Manual)", Callback = startDesert })
 DesertTab:CreateToggle({
     Name = "Stand in the Middle (InfDesert) - Use only in InfDesert",
     CurrentValue = false,
     Flag = "StandDesertFlag",
     Callback = function(Value)
         standDesertEnabled = Value
-        if Value and insideDesert then
-            safeStandAt(desertCFrame)
-        end
+        if Value then safeStandAt(desertCFrame) end
     end
 })
-
--- Manual Start Desert
-DesertTab:CreateButton({
-    Name = "Start Infinite Desert (Manual)",
-    Callback = startDesert
-})
-
--- Auto-Restart Desert
 DesertTab:CreateToggle({
     Name = "Auto-Restart (on Portal Destroyed)",
     CurrentValue = false,
@@ -129,24 +107,20 @@ DesertTab:CreateToggle({
     Callback = function(Value) autoRestartDesert = Value end
 })
 
--- ---------- Loop per Stand in the Middle ----------
+-- ---------- Loop Stand in the Middle ----------
 task.spawn(function()
     while true do
         task.wait(0.2)
-        if standCastleEnabled and insideCastle then
-            safeStandAt(castleCFrame)
-        end
-        if standDesertEnabled and insideDesert then
-            safeStandAt(desertCFrame)
-        end
+        if standCastleEnabled then safeStandAt(castleCFrame) end
+        if standDesertEnabled then safeStandAt(desertCFrame) end
     end
 end)
 
 -- Teleport al respawn se toggle attivo
 player.CharacterAdded:Connect(function()
     task.wait(1)
-    if standCastleEnabled and insideCastle then safeStandAt(castleCFrame) end
-    if standDesertEnabled and insideDesert then safeStandAt(desertCFrame) end
+    if standCastleEnabled then safeStandAt(castleCFrame) end
+    if standDesertEnabled then safeStandAt(desertCFrame) end
 end)
 
 -- ---------- Auto-Restart on Portal Destroy ----------
@@ -160,13 +134,8 @@ dataRemoteEvent.OnClientEvent:Connect(function(...)
             elseif k == "Message" and type(v) == "string" then
                 local msg = v:upper()
                 if msg:find("PORTAL DESTROYED") then
-                    if autoRestartCastle and insideCastle then
-                        task.spawn(restartCastle)
-                    end
-                    if autoRestartDesert and insideDesert then
-                        task.spawn(restartDesert)
-                    end
-                    return
+                    if autoRestartCastle then task.spawn(restartCastle) end
+                    if autoRestartDesert then task.spawn(restartDesert) end
                 end
             end
         end
