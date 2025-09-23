@@ -68,11 +68,11 @@ local Window = Rayfield:CreateWindow({
 
 local MainTab = Window:CreateTab("Main", 4483362458)
 
--- Toggle auto-restart portal con flag per salvataggio
+-- Toggle auto-restart portal con Flag per salvataggio automatico
 local PortalToggle = MainTab:CreateToggle({
     Name = "Auto-Restart alla distruzione del portale",
     CurrentValue = false,
-    Flag = "AutoRestartPortalFlag", -- necessario per il salvataggio
+    Flag = "AutoRestartPortalFlag", -- fondamentale per salvare la config
     Callback = function(Value)
         autoRestartPortal = Value
         if Value then
@@ -88,7 +88,8 @@ MainTab:CreateButton({
     Name = "Avvia InfCastle Manuale",
     Callback = function()
         startInfiniteCastle()
-    end
+    end,
+    Flag = "StartManualFlag" -- opzionale, solo per salvataggio eventuale
 })
 
 -- Pulsante manuale per riavviare il castello
@@ -96,5 +97,8 @@ MainTab:CreateButton({
     Name = "Riavvia InfCastle Manuale",
     Callback = function()
         restartCastle()
-    end
+    end,
+    Flag = "RestartManualFlag" -- opzionale, solo per salvataggio eventuale
 })
+
+-- Auto-execute ready: tutte le impostazioni e i toggle saranno salvati e ripristinati automaticamente
