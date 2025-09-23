@@ -7,10 +7,10 @@ local autoRestartPortal -- sarà inizializzato dal toggle
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local dataRemoteEvent = ReplicatedStorage:WaitForChild("BridgeNet2"):WaitForChild("dataRemoteEvent")
 
--- GUI completa
+-- GUI con nome personalizzato
 local Window = Rayfield:CreateWindow({
-    Name = "InfiniteCastle Hub",
-    LoadingTitle = "InfiniteCastle Loader",
+    Name = "xnxsmoke Hub",
+    LoadingTitle = "xnxsmoke Loader",
     LoadingSubtitle = "by xnxsmoke",
     ConfigurationSaving = {
         Enabled = true,
@@ -19,12 +19,16 @@ local Window = Rayfield:CreateWindow({
     },
 })
 
-local MainTab = Window:CreateTab("Main", 4483362458)
+-- Tab per Infinite Castle
+local CastleTab = Window:CreateTab("InfCastle", 4483362458)
+
+-- NUOVA tab per InfDesert
+local DesertTab = Window:CreateTab("InfDesert", 4483362458)
 
 -- Toggle auto-restart portal
-local PortalToggle = MainTab:CreateToggle({
+local PortalToggle = CastleTab:CreateToggle({
     Name = "Auto-Restart alla distruzione del portale",
-    CurrentValue = false, -- default, sarà sovrascritto dalla config
+    CurrentValue = false,
     Flag = "AutoRestartPortalFlag",
     Callback = function(Value)
         autoRestartPortal = Value
@@ -36,7 +40,7 @@ local PortalToggle = MainTab:CreateToggle({
     end,
 })
 
--- Carica la configurazione solo dopo che toggle e GUI sono pronti
+-- Carica la configurazione dopo aver creato GUI e toggle
 Rayfield:LoadConfiguration("InfiniteCastleHub")
 
 -- Funzioni principali
@@ -81,15 +85,21 @@ dataRemoteEvent.OnClientEvent:Connect(function(...)
     end
 end)
 
--- Pulsanti manuali
-MainTab:CreateButton({
+-- Pulsanti manuali per Castle
+CastleTab:CreateButton({
     Name = "Avvia InfCastle Manuale",
     Callback = function() startInfiniteCastle() end,
     Flag = "StartManualFlag"
 })
 
-MainTab:CreateButton({
+CastleTab:CreateButton({
     Name = "Riavvia InfCastle Manuale",
     Callback = function() restartCastle() end,
     Flag = "RestartManualFlag"
+})
+
+-- Placeholder per InfDesert
+DesertTab:CreateParagraph({
+    Title = "Work in Progress",
+    Content = "Qui aggiungeremo i controlli per InfDesert."
 })
