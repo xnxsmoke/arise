@@ -58,21 +58,6 @@ StandToggle = CastleTab:CreateToggle({
     end,
 })
 
--- Funzione per teletrasportare al centro solo se toggle attivo
-local function tryStandInMiddle()
-    if StandToggle:Get() and insideCastle then
-        local player = game.Players.LocalPlayer
-        if player and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-            player.Character.HumanoidRootPart.CFrame = middleCFrame
-            Rayfield:Notify({
-                Title = "Stand in the Middle",
-                Content = "Sei stato teletrasportato al centro!",
-                Duration = 3
-            })
-        end
-    end
-end
-
 -- Carica la configurazione dopo aver creato GUI e toggle
 Rayfield:LoadConfiguration("InfiniteCastleHub")
 
@@ -86,10 +71,6 @@ local function startInfiniteCastle()
     dataRemoteEvent:FireServer(unpack(startArgs))
     insideCastle = true
     print("Castello avviato")
-
-    wait(3)
-    -- Teleporto al centro solo se toggle Stand in the Middle è attivo
-    tryStandInMiddle()
 end
 
 local function restartCastle()
@@ -134,3 +115,16 @@ DesertTab:CreateParagraph({
     Title = "Work in Progress",
     Content = "Qui aggiungeremo i controlli per InfDesert."
 })
+
+-- Loop continuo per Stand in the Middle
+spawn(function()
+    while true do
+        wait(0.1)
+        if StandToggle:Get() and insideCastle then
+            local player = game.Players.LocalPlayer
+            if player and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+                player.Character.HumanoidRootPart.CFrame = middleCFrame
+            end
+        end
+    end
+end)
