@@ -97,7 +97,6 @@ function getCurrentWave()
 end
 
 function isInInfiniteCastle()
-    -- considera di essere dentro se l'UI esiste o la wave è > 0
     local player = game.Players.LocalPlayer
     if not player then return false end
     local gui = player:FindFirstChild("PlayerGui") and player.PlayerGui:FindFirstChild("InfiniteCastleGui")
@@ -116,10 +115,13 @@ local function startAutoRestartLoop()
             if wave and wave >= restartAtWave then
                 Rayfield:Notify({Title="Restart!", Content="Raggiunta wave "..wave..". Riavvio...", Duration=3})
                 restartCastle()
+                -- 🔹 Aspetta finché non esci davvero dal castello
+                repeat wait(1) until not isInInfiniteCastle()
                 wait(3)
-                startInfiniteCastle()
-                -- aspetta qualche secondo per evitare loop immediati
-                wait(5)
+                -- 🔹 Entra solo se auto-start è abilitato e non sei già dentro
+                if autoStartEnabled and not isInInfiniteCastle() then
+                    startInfiniteCastle()
+                end
             end
             wait(1)
         end
@@ -136,7 +138,6 @@ local AutoInfiniteToggle = MainTab:CreateToggle({
         autoStartEnabled = Value
         SaveConfig()
         if autoStartEnabled then
-            -- se siamo già dentro, non avviare per evitare loop
             if isInInfiniteCastle() then
                 Rayfield:Notify({Title="Auto InfiniteCastle", Content="Sei già dentro all'Infinite Castle: avvio automatico disabilitato per evitare loop.", Duration=5})
             else
