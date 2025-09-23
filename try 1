@@ -1,8 +1,49 @@
 local Rayfield = loadstring(game:HttpGet("https://sirius.menu/rayfield"))()
 
-local restartAtWave = 5
+local HttpService = game:GetService("HttpService")
+
+-- CONFIG FILE (usa writefile/readfile se disponibili nell'executor)
+local configFileName = "InfiniteCastleHub_config.json"
+
+-- default values
+local restartAtWave = 71
 local autoStartEnabled = false
 local autoRestartEnabled = false
+
+-- Utility: load/save config to file (fallback se Rayfield non salva)
+local function LoadConfig()
+    if type(readfile) == "function" and pcall(function() return isfile(configFileName) end) and isfile(configFileName) then
+        local ok, raw = pcall(function() return readfile(configFileName) end)
+        if ok and raw then
+            local success, decoded = pcall(function() return HttpService:JSONDecode(raw) end)
+            if success and type(decoded) == "table" then
+                return decoded
+            end
+        end
+    end
+    return nil
+end
+
+local function SaveConfig()
+    if type(writefile) ~= "function" then return end
+    local data = {
+        restartAtWave = restartAtWave,
+        autoStartEnabled = autoStartEnabled,
+        autoRestartEnabled = autoRestartEnabled,
+    }
+    local ok, encoded = pcall(function() return HttpService:JSONEncode(data) end)
+    if ok and encoded then
+        pcall(function() writefile(configFileName, encoded) end)
+    end
+end
+
+-- try to load saved config (if present)
+local loaded = LoadConfig()
+if loaded then
+    restartAtWave = loaded.restartAtWave or restartAtWave
+    autoStartEnabled = loaded.autoStartEnabled == true
+    autoRestartEnabled = loaded.autoRestartEnabled == true
+end
 
 local Window = Rayfield:CreateWindow({
     Name = "InfiniteCastle Hub",
@@ -16,61 +57,10 @@ local Window = Rayfield:CreateWindow({
 
 local MainTab = Window:CreateTab("Main", 4483362458)
 
--- Toggle per Avvia Auto InfiniteCastle
-MainTab:CreateToggle({
-    Name = "Auto InfiniteCastle",
-    CurrentValue = false,
-    Flag = "AutoInfiniteCastleFlag",
-    Callback = function(Value)
-        autoStartEnabled = Value
-        if autoStartEnabled then
-            Rayfield:Notify({Title="Auto InfiniteCastle", Content="Auto-InfiniteCastle avviato!", Duration=3})
-            startInfiniteCastle()
-        else
-            Rayfield:Notify({Title="Auto InfiniteCastle", Content="Auto-InfiniteCastle fermato!", Duration=3})
-        end
-    end,
-})
+-- Keep track so we don't spawn multiple checker loops
+local autoRestartThreadRunning = false
 
--- Slider fino a 200
-MainTab:CreateSlider({
-    Name = "Wave per Restart",
-    Range = {1, 200},
-    Increment = 1,
-    CurrentValue = 5,
-    Flag = "RestartWaveFlag",
-    Callback = function(Value)
-        restartAtWave = Value
-    end,
-})
-
--- Toggle per Auto-Restart Castle
-MainTab:CreateToggle({
-    Name = "Auto-Restart Castle",
-    CurrentValue = false,
-    Flag = "AutoRestartCastleFlag",
-    Callback = function(Value)
-        autoRestartEnabled = Value
-        if autoRestartEnabled then
-            Rayfield:Notify({Title="Auto-Restart", Content="Controllo wave attivo!", Duration=3})
-            spawn(function()
-                while autoRestartEnabled do
-                    local wave = getCurrentWave()
-                    if autoStartEnabled and wave >= restartAtWave then
-                        Rayfield:Notify({Title="Restart!", Content="Raggiunta wave "..wave..". Riavvio...", Duration=3})
-                        restartCastle()
-                        wait(3)
-                        startInfiniteCastle()
-                    end
-                    wait(1)
-                end
-            end)
-        else
-            Rayfield:Notify({Title="Auto-Restart", Content="Auto-Restart fermato!", Duration=3})
-        end
-    end,
-})
-
+-- Functions interacting with the game
 function startInfiniteCastle()
     local ReplicatedStorage = game:GetService("ReplicatedStorage")
     local dataRemoteEvent = ReplicatedStorage:WaitForChild("BridgeNet2"):WaitForChild("dataRemoteEvent")
@@ -103,3 +93,88 @@ function getCurrentWave()
     end
     return 1
 end
+
+-- Auto-Restart loop (riavvia quando raggiungi restartAtWave)
+local function startAutoRestartLoop()
+    if autoRestartThreadRunning then return end
+    autoRestartThreadRunning = true
+    spawn(function()
+        while autoRestartEnabled do
+            local wave = getCurrentWave()
+            if autoStartEnabled and wave >= restartAtWave then
+                Rayfield:Notify({Title="Restart!", Content="Raggiunta wave "..wave..". Riavvio...", Duration=3})
+                restartCastle()
+                wait(3)
+                startInfiniteCastle()
+                -- aspetta qualche secondo per evitare loop immediati
+                wait(5)
+            end
+            wait(1)
+        end
+        autoRestartThreadRunning = false
+    end)
+end
+
+-- UI
+local AutoInfiniteToggle = MainTab:CreateToggle({
+    Name = "Auto InfiniteCastle",
+    CurrentValue = autoStartEnabled,
+    Flag = "AutoInfiniteCastleFlag",
+    Callback = function(Value)
+        autoStartEnabled = Value
+        SaveConfig()
+        if autoStartEnabled then
+            Rayfield:Notify({Title="Auto InfiniteCastle", Content="Auto-InfiniteCastle avviato!", Duration=3})
+            startInfiniteCastle()
+        else
+            Rayfield:Notify({Title="Auto InfiniteCastle", Content="Auto-InfiniteCastle fermato!", Duration=3})
+        end
+    end,
+})
+
+local WaveSlider = MainTab:CreateSlider({
+    Name = "Wave per Restart (imposta 71 se vuoi riavviare a 71)",
+    Range = {1, 200},
+    Increment = 1,
+    CurrentValue = restartAtWave,
+    Flag = "RestartWaveFlag",
+    Callback = function(Value)
+        restartAtWave = Value
+        SaveConfig()
+    end,
+})
+
+local AutoRestartToggle = MainTab:CreateToggle({
+    Name = "Auto-Restart Castle",
+    CurrentValue = autoRestartEnabled,
+    Flag = "AutoRestartCastleFlag",
+    Callback = function(Value)
+        autoRestartEnabled = Value
+        SaveConfig()
+        if autoRestartEnabled then
+            Rayfield:Notify({Title="Auto-Restart", Content="Controllo wave attivo!", Duration=3})
+            startAutoRestartLoop()
+        else
+            Rayfield:Notify({Title="Auto-Restart", Content="Auto-Restart fermato!", Duration=3})
+        end
+    end,
+})
+
+-- Se la config caricata aveva i toggle attivi, avvia subito le funzioni
+if autoStartEnabled then
+    -- piccolo delay per assicurare che l'interfaccia sia pronta
+    spawn(function()
+        wait(0.5)
+        startInfiniteCastle()
+    end)
+end
+if autoRestartEnabled then
+    spawn(function()
+        wait(0.5)
+        startAutoRestartLoop()
+    end)
+end
+
+-- Nota: questo script salva anche in un file JSON (se writefile/readfile esistono nell'executor).
+-- In ambienti dove writefile non è disponibile, Rayfield dovrebbe comunque salvare i Flag nella sua cartella di configurazione.
+-- Se vuoi che il riavvio avvenga SEMPRE e solo alla wave 71, puoi impostare restartAtWave = 71 e rimuovere/interdire lo slider.
