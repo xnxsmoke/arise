@@ -43,26 +43,30 @@ local PortalToggle = CastleTab:CreateToggle({
 -- Toggle Stand in the Middle (solo dentro InfCastle)
 local middleCFrame = CFrame.new(Vector3.new(432.6329, 4384.6372, -1898.6741))
 
-local StandToggle = CastleTab:CreateToggle({
+local StandToggle
+StandToggle = CastleTab:CreateToggle({
     Name = "Stand in the Middle",
     CurrentValue = false,
     Flag = "StandInMiddleFlag",
     Callback = function(Value)
         if Value then
-            if insideCastle then
-                local player = game.Players.LocalPlayer
-                if player and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-                    player.Character.HumanoidRootPart.CFrame = middleCFrame
-                    Rayfield:Notify({
-                        Title = "Stand in the Middle",
-                        Content = "Sei stato teletrasportato al centro!",
-                        Duration = 3
-                    })
-                end
-            else
+            if not insideCastle then
+                -- Se siamo fuori dal castello, non teletrasportare
                 Rayfield:Notify({
                     Title = "Stand in the Middle",
-                    Content = "Devi essere dentro l'InfCastle per usarlo!",
+                    Content = "Funziona solo dentro l'InfCastle!",
+                    Duration = 3
+                })
+                return
+            end
+
+            -- Teletrasporto al centro solo se siamo dentro
+            local player = game.Players.LocalPlayer
+            if player and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+                player.Character.HumanoidRootPart.CFrame = middleCFrame
+                Rayfield:Notify({
+                    Title = "Stand in the Middle",
+                    Content = "Sei stato teletrasportato al centro!",
                     Duration = 3
                 })
             end
