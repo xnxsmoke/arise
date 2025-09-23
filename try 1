@@ -40,7 +40,7 @@ local PortalToggle = CastleTab:CreateToggle({
     end,
 })
 
--- Toggle Stand in the Middle
+-- Toggle Stand in the Middle (solo dentro InfCastle)
 local middleCFrame = CFrame.new(Vector3.new(432.6329, 4384.6372, -1898.6741))
 
 local StandToggle = CastleTab:CreateToggle({
@@ -49,12 +49,20 @@ local StandToggle = CastleTab:CreateToggle({
     Flag = "StandInMiddleFlag",
     Callback = function(Value)
         if Value then
-            local player = game.Players.LocalPlayer
-            if player and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-                player.Character.HumanoidRootPart.CFrame = middleCFrame
+            if insideCastle then
+                local player = game.Players.LocalPlayer
+                if player and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+                    player.Character.HumanoidRootPart.CFrame = middleCFrame
+                    Rayfield:Notify({
+                        Title = "Stand in the Middle",
+                        Content = "Sei stato teletrasportato al centro!",
+                        Duration = 3
+                    })
+                end
+            else
                 Rayfield:Notify({
                     Title = "Stand in the Middle",
-                    Content = "Sei stato teletrasportato al centro!",
+                    Content = "Devi essere dentro l'InfCastle per usarlo!",
                     Duration = 3
                 })
             end
@@ -64,14 +72,6 @@ local StandToggle = CastleTab:CreateToggle({
 
 -- Carica la configurazione dopo aver creato GUI e toggle
 Rayfield:LoadConfiguration("InfiniteCastleHub")
-
--- Funzione per teletrasportare il personaggio al punto desiderato
-local function teleportToCastlePoint()
-    local player = game.Players.LocalPlayer
-    local char = player.Character or player.CharacterAdded:Wait()
-    local hrp = char:WaitForChild("HumanoidRootPart")
-    hrp.CFrame = middleCFrame
-end
 
 -- Funzioni principali
 local function startInfiniteCastle()
@@ -85,7 +85,11 @@ local function startInfiniteCastle()
     print("Castello avviato")
 
     wait(3)
-    teleportToCastlePoint()
+    -- Teleport automatico al centro del castello
+    local player = game.Players.LocalPlayer
+    if player and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+        player.Character.HumanoidRootPart.CFrame = middleCFrame
+    end
 end
 
 local function restartCastle()
