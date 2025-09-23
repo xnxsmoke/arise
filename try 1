@@ -90,6 +90,7 @@ CastleTab:CreateButton({
     Flag = "StartManualFlag"
 })
 
+-- First version Stand in the Middle loop (works always)
 spawn(function()
     while true do
         wait(0.1)
