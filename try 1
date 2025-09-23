@@ -1,4 +1,3 @@
--- Rayfield GUI completa con auto-restart basato sul portale distrutto
 local Rayfield = loadstring(game:HttpGet("https://sirius.menu/rayfield"))()
 
 -- Stato interno
@@ -60,14 +59,22 @@ local Window = Rayfield:CreateWindow({
     Name = "InfiniteCastle Hub",
     LoadingTitle = "InfiniteCastle Loader",
     LoadingSubtitle = "by xnxsmoke",
-    ConfigurationSaving = { Enabled = true, FileName = "InfiniteCastleHub" },
+    ConfigurationSaving = { Enabled = true, FileName = "InfiniteCastleHub", AutoSave = true },
 })
 
 local MainTab = Window:CreateTab("Main", 4483362458)
 
+-- Pulsante manuale per avviare il castello
+MainTab:CreateButton({
+    Name = "Avvia InfCastle Manuale",
+    Callback = function()
+        startInfiniteCastle()
+    end
+})
+
 -- Toggle auto-restart portal
 local PortalToggle = MainTab:CreateToggle({
-    Name = "Auto-Restart Portal",
+    Name = "Auto-Restart alla distruzione del portale",
     CurrentValue = false,
     Flag = "AutoRestartPortalFlag",
     Callback = function(Value)
@@ -78,31 +85,4 @@ local PortalToggle = MainTab:CreateToggle({
             Rayfield:Notify({Title="Auto-Restart", Content="Disattivato!", Duration=3})
         end
     end,
-})
-
--- Slider tempo stimato (opzionale, per stime future)
-local TimeSlider = MainTab:CreateSlider({
-    Name = "Tempo stimato (sec)",
-    Range = {10, 600},
-    Increment = 5,
-    CurrentValue = 120,
-    Flag = "TempoStimatoFlag",
-    Callback = function(Value)
-        -- Può essere usato in futuro se vuoi fare restart basato sul tempo
-    end,
-})
-
--- Pulsanti manuali
-MainTab:CreateButton({
-    Name = "Avvia Castello Manuale",
-    Callback = function()
-        startInfiniteCastle()
-    end
-})
-
-MainTab:CreateButton({
-    Name = "Riavvia Castello Manuale",
-    Callback = function()
-        restartCastle()
-    end
 })
