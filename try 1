@@ -27,23 +27,40 @@ local function standAt(cframe)
     end
 end
 
+-- Lock globale per evitare conflitti
 local startingDungeon = false
+
+-- Toggle state variables (no :Get() calls)
 local standCastleEnabled = false
 local standDesertEnabled = false
+local autoRestartCastleEnabled = false
+local autoRestartDesertEnabled = false
 
--- INFCASTLE
+-- ---------- INFCASTLE ----------
 CastleTab:CreateButton({
     Name = "Start Infinite Castle (Manual)",
     Callback = function()
         if startingDungeon then return end
         startingDungeon = true
-        local argsCreate = { { { Event = "InfiniteCastleAction", Action = "Create" }, "\r" } }
+        local argsCreate = { { { Event = "InfiniteCastleAction", Action = "Create" } } }
         dataRemoteEvent:FireServer(unpack(argsCreate))
         task.wait(1)
-        local argsStart = { { { Dungeon = 3604563306, Event = "InfiniteCastleAction", Action = "Start" }, "\r" } }
+        local argsStart = { { { Dungeon = 3604563306, Event = "InfiniteCastleAction", Action = "Start" } } }
         dataRemoteEvent:FireServer(unpack(argsStart))
+        Rayfield:Notify({Title="InfCastle", Content="Start command sent", Duration=2})
         print("Infinite Castle started")
+        task.wait(2)
         startingDungeon = false
+    end
+})
+
+CastleTab:CreateToggle({
+    Name = "Auto-Restart (on Portal Destroyed)",
+    CurrentValue = false,
+    Flag = "AutoRestartCastleFlag",
+    Callback = function(Value)
+        autoRestartCastleEnabled = Value
+        Rayfield:Notify({Title="Auto-Restart Castle", Content=Value and "Enabled" or "Disabled", Duration=2})
     end
 })
 
@@ -51,22 +68,38 @@ CastleTab:CreateToggle({
     Name = "Stand in the Middle (Use only in InfCastle)",
     CurrentValue = false,
     Flag = "StandCastleFlag",
-    Callback = function(Value) standCastleEnabled = Value end
+    Callback = function(Value)
+        standCastleEnabled = Value
+        Rayfield:Notify({Title="Stand Castle", Content=Value and "Enabled" or "Disabled", Duration=1.5})
+        if Value then standAt(castleCFrame) end
+    end
 })
 
--- INFDESERT
+-- ---------- INFDESERT ----------
 DesertTab:CreateButton({
     Name = "Start Infinite Desert (Manual)",
     Callback = function()
         if startingDungeon then return end
         startingDungeon = true
-        local argsCreate = { { { Event = "InfiniteModeAction", Action = "Create" }, "\r" } }
+        local argsCreate = { { { Event = "InfiniteModeAction", Action = "Create" } } }
         dataRemoteEvent:FireServer(unpack(argsCreate))
         task.wait(1)
-        local argsStart = { { { Dungeon = 3604563306, Event = "InfiniteModeAction", Action = "Start" }, "\r" } }
+        local argsStart = { { { Dungeon = 3604563306, Event = "InfiniteModeAction", Action = "Start" } } }
         dataRemoteEvent:FireServer(unpack(argsStart))
+        Rayfield:Notify({Title="InfDesert", Content="Start command sent", Duration=2})
         print("Infinite Desert started")
+        task.wait(2)
         startingDungeon = false
+    end
+})
+
+DesertTab:CreateToggle({
+    Name = "Auto-Restart (on Portal Destroyed)",
+    CurrentValue = false,
+    Flag = "AutoRestartDesertFlag",
+    Callback = function(Value)
+        autoRestartDesertEnabled = Value
+        Rayfield:Notify({Title="Auto-Restart Desert", Content=Value and "Enabled" or "Disabled", Duration=2})
     end
 })
 
@@ -74,13 +107,17 @@ DesertTab:CreateToggle({
     Name = "Stand in the Middle (Use only in InfDesert)",
     CurrentValue = false,
     Flag = "StandDesertFlag",
-    Callback = function(Value) standDesertEnabled = Value end
+    Callback = function(Value)
+        standDesertEnabled = Value
+        Rayfield:Notify({Title="Stand Desert", Content=Value and "Enabled" or "Disabled", Duration=1.5})
+        if Value then standAt(desertCFrame) end
+    end
 })
 
--- Stand loop
+-- ---------- Continuous Stand loop ----------
 task.spawn(function()
     while true do
-        task.wait(0.3)
+        task.wait(0.25)
         if standCastleEnabled then
             standAt(castleCFrame)
         elseif standDesertEnabled then
@@ -89,14 +126,76 @@ task.spawn(function()
     end
 end)
 
--- Auto reposition on respawn
 player.CharacterAdded:Connect(function()
+    task.wait(0.8)
+    if standCastleEnabled then standAt(castleCFrame) end
+    if standDesertEnabled then standAt(desertCFrame) end
+end)
+
+-- ---------- Auto-Restart functions ----------
+local function restartInfiniteCastleSequence()
+    if startingDungeon then return end
+    startingDungeon = true
+    Rayfield:Notify({Title="Auto-Restart", Content="Restarting Infinite Castle...", Duration=3})
+    local leaveArgs = { { { Event = "InfiniteCastleAction", Action = "Leave" } } }
+    dataRemoteEvent:FireServer(unpack(leaveArgs))
+    task.wait(2)
+    local createArgs = { { { Event = "InfiniteCastleAction", Action = "Create" } } }
+    dataRemoteEvent:FireServer(unpack(createArgs))
     task.wait(1)
-    if standCastleEnabled then
-        standAt(castleCFrame)
-    elseif standDesertEnabled then
-        standAt(desertCFrame)
+    local startArgs = { { { Dungeon = 3604563306, Event = "InfiniteCastleAction", Action = "Start" } } }
+    dataRemoteEvent:FireServer(unpack(startArgs))
+    print("[Auto-Restart] Infinite Castle restarted")
+    task.wait(2)
+    startingDungeon = false
+end
+
+local function restartInfiniteDesertSequence()
+    if startingDungeon then return end
+    startingDungeon = true
+    Rayfield:Notify({Title="Auto-Restart", Content="Restarting Infinite Desert...", Duration=3})
+    local leaveArgs = { { { Event = "InfiniteModeAction", Action = "Leave" } } }
+    dataRemoteEvent:FireServer(unpack(leaveArgs))
+    task.wait(2)
+    local createArgs = { { { Event = "InfiniteModeAction", Action = "Create" } } }
+    dataRemoteEvent:FireServer(unpack(createArgs))
+    task.wait(1)
+    local startArgs = { { { Dungeon = 3604563306, Event = "InfiniteModeAction", Action = "Start" } } }
+    dataRemoteEvent:FireServer(unpack(startArgs))
+    print("[Auto-Restart] Infinite Desert restarted")
+    task.wait(2)
+    startingDungeon = false
+end
+
+-- ---------- Monitor server messages (Portal Destroyed) ----------
+dataRemoteEvent.OnClientEvent:Connect(function(...)
+    local args = {...}
+    local function recursiveCheck(tbl)
+        if type(tbl) ~= "table" then return end
+        for k,v in pairs(tbl) do
+            if type(v) == "table" then
+                recursiveCheck(v)
+            else
+                if k == "Message" and type(v) == "string" then
+                    local msg = v:upper()
+                    if msg:find("PORTAL DESTROYED") then
+                        -- run castle and desert restarts if enabled (serialized)
+                        if autoRestartCastleEnabled then
+                            task.spawn(restartInfiniteCastleSequence)
+                        end
+                        if autoRestartDesertEnabled then
+                            -- slight delay to avoid immediate conflict; restart will check startingDungeon
+                            task.spawn(function()
+                                task.wait(0.5)
+                                restartInfiniteDesertSequence()
+                            end)
+                        end
+                    end
+                end
+            end
+        end
     end
+    for _,v in ipairs(args) do recursiveCheck(v) end
 end)
 
 Rayfield:LoadConfiguration("InfiniteModesHub")
