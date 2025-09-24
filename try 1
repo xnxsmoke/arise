@@ -24,7 +24,6 @@ local standCastleEnabled = false
 local standDesertEnabled = false
 local autoRestartCastle = false
 local autoRestartDesert = false
-local currentSpeed = "1"
 
 -- ---------- Helpers ----------
 local function safeStandAt(cf)
@@ -46,20 +45,6 @@ local function startCastle()
     task.wait(1)
     if standCastleEnabled then
         safeStandAt(castleCFrame)
-    end
-    -- Se speed = 2, manda subito il FireServer
-    if currentSpeed == "2" then
-        fireSafe({
-            {
-                {
-                    Speed = 2,
-                    Event = "InfiniteCastleAction",
-                    Action = "SpeedUp"
-                },
-                "\r"
-            }
-        })
-        print("[InfCastle] Speed impostata a 2")
     end
 end
 
@@ -84,32 +69,6 @@ CastleTab:CreateToggle({
     CurrentValue = false,
     Flag = "AutoRestartCastleFlag",
     Callback = function(Value) autoRestartCastle = Value end
-})
-
--- 🔽 Nuovo Dropdown per la Speed 🔽
-CastleTab:CreateDropdown({
-    Name = "Speed",
-    Options = {"1", "2"},
-    CurrentOption = "1",
-    Flag = "CastleSpeedFlag",
-    Callback = function(Option)
-        currentSpeed = Option
-        if Option == "2" then
-            fireSafe({
-                {
-                    {
-                        Speed = 2,
-                        Event = "InfiniteCastleAction",
-                        Action = "SpeedUp"
-                    },
-                    "\r"
-                }
-            })
-            print("[InfCastle] Speed impostata manualmente a 2")
-        else
-            print("[InfCastle] Speed impostata a 1 (default)")
-        end
-    end,
 })
 
 -- ---------- InfDesert ----------
