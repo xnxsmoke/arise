@@ -7,7 +7,7 @@ local castleCFrame = CFrame.new(432.6329, 4384.6372, -1898.6741)
 local desertCFrame = CFrame.new(463.8988, 4383.7646, -1888.2440)
 local standCastleEnabled, standDesertEnabled = false, false
 local autoRestartCastle, autoRestartDesert = false, false
-local autoClickEnabled = false
+local autoClickEnabled, autoSpeedEnabled = false, false
 local Window = Rayfield:CreateWindow({Name="xnxsmoke Hub", LoadingTitle="Loader", LoadingSubtitle="by xnxsmoke", ConfigurationSaving={Enabled=true, FileName="InfiniteModesHub", AutoSave=true}})
 local CastleTab = Window:CreateTab("InfCastle", 4483362458)
 local DesertTab = Window:CreateTab("InfDesert", 4483362458)
@@ -49,19 +49,12 @@ CastleTab:CreateToggle({
             safeStandAt(castleCFrame)
             task.spawn(function()
                 task.wait(1)
-                local dropdownValue = Rayfield:GetFlag("CastleSpeedDropdown") or "1"
-                local speed = tonumber(dropdownValue)
-                local args = {
-                    {
-                        {
-                            Speed = speed,
-                            Event = "InfiniteCastleAction",
-                            Action = "SpeedUp"
-                        },
-                        "\r"
-                    }
-                }
-                fireSafe(args)
+                if autoSpeedEnabled then
+                    local dropdownValue = Rayfield:GetFlag("CastleSpeedDropdown") or "1"
+                    local speed = tonumber(dropdownValue)
+                    local args = {{{Speed=speed, Event="InfiniteCastleAction", Action="SpeedUp"}, "\r"}}
+                    fireSafe(args)
+                end
             end)
         end
     end
@@ -75,6 +68,26 @@ CastleTab:CreateDropdown({
     CurrentOption = "1",
     Flag = "CastleSpeedDropdown",
     Callback=function() end
+})
+
+CastleTab:CreateToggle({
+    Name = "Enable Wave Speed",
+    CurrentValue=false,
+    Flag = "AutoSpeedFlag",
+    Callback=function(Value)
+        autoSpeedEnabled = Value
+        if Value then
+            task.spawn(function()
+                while autoSpeedEnabled do
+                    local dropdownValue = Rayfield:GetFlag("CastleSpeedDropdown") or "1"
+                    local speed = tonumber(dropdownValue)
+                    local args = {{{Speed=speed, Event="InfiniteCastleAction", Action="SpeedUp"}, "\r"}}
+                    fireSafe(args)
+                    task.wait(1)
+                end
+            end)
+        end
+    end
 })
 
 local function startDesert()
