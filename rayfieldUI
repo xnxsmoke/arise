@@ -1,18 +1,16 @@
--- xnxsmoke Hub: versione robusta per autoexec/executor
 local Rayfield = loadstring(game:HttpGet("https://sirius.menu/rayfield"))()
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
 local player = Players.LocalPlayer
+
 local dataRemoteEvent = ReplicatedStorage:WaitForChild("BridgeNet2"):WaitForChild("dataRemoteEvent")
 
--- Coordinate
 local castleCFrame = CFrame.new(432.6329, 4384.6372, -1898.6741)
 local desertCFrame = CFrame.new(463.8988, 4383.7646, -1888.2440)
 
--- Window
 local Window = Rayfield:CreateWindow({
     Name = "xnxsmoke Hub",
-    LoadingTitle = "xnxsmoke Loader",
+    LoadingTitle = "Loader",
     LoadingSubtitle = "by xnxsmoke",
     ConfigurationSaving = { Enabled = true, FileName = "InfiniteModesHub", AutoSave = true },
 })
@@ -20,21 +18,13 @@ local Window = Rayfield:CreateWindow({
 local CastleTab = Window:CreateTab("InfCastle", 4483362458)
 local DesertTab = Window:CreateTab("InfDesert", 4483362458)
 
--- ---------- Flags & impostazioni ----------
 local standCastleEnabled = false
 local standDesertEnabled = false
 local autoRestartCastle = false
 local autoRestartDesert = false
-
--- AutoClick: variabili condivise
 local autoClickEnabled = false
-local autoClickDelay = 0.1 -- valore di default (sicuro). Lo slider può cambiarlo.
+local autoClickDelay = 0.1
 
--- Determina se usare WeaponsModule (true) oppure fallback RemoteEvent (false)
-local useWeaponsModule = false
-local WeaponsModule = nil
-
--- ---------- Helpers ----------
 local function safeStandAt(cf)
     local char = player.Character
     if char and char:FindFirstChild("HumanoidRootPart") then
@@ -46,79 +36,12 @@ local function fireSafe(args)
     pcall(function() dataRemoteEvent:FireServer(unpack(args)) end)
 end
 
--- ---------- Startup sicuro per autoexec/executor ----------
--- piccolo delay di sicurezza per injector veloci
-task.spawn(function()
-    -- aspetta i servizi/oggetti minimi (con timeout implicito perché WaitForChild è bloccante ma ok)
-    -- attendiamo LocalPlayer:GetAttribute("Loaded") per essere sicuri che il gioco abbia finito il load lato client
-    local maxRetries = 200
-    local tries = 0
-    repeat
-        task.wait(0.1)
-        tries = tries + 1
-        -- se il player non ha ancora l'attributo "Loaded", continuiamo ad aspettare; se il gioco non lo setta, timeout dopo ~20s
-        if tries > maxRetries then break end
-    until player and player:GetAttribute("Loaded") == true
-
-    -- prova a require il WeaponsModule in modo sicuro (pcall)
-    if ReplicatedStorage:FindFirstChild("SharedModules") and ReplicatedStorage.SharedModules:FindFirstChild("WeaponsModule") then
-        local ok, mod = pcall(function()
-            return require(ReplicatedStorage.SharedModules.WeaponsModule)
-        end)
-        if ok and type(mod) == "table" then
-            useWeaponsModule = true
-            WeaponsModule = mod
-        else
-            useWeaponsModule = false
-        end
-    else
-        useWeaponsModule = false
-    end
-end)
-
--- ---------- Auto Click loop (parte DOPO che l'interfaccia è costruita e config caricata) ----------
-local function startAutoClickLoop()
-    spawn(function()
-        -- aspettiamo che il player sia pronto (ridondante ma sicuro)
-        repeat task.wait(0.1) until player and player:GetAttribute and player:GetAttribute("Loaded") == true
-
-        while true do
-            if autoClickEnabled then
-                pcall(function()
-                    if useWeaponsModule and WeaponsModule and type(WeaponsModule.Click) == "function" then
-                        -- usa il metodo interno se disponibile
-                        WeaponsModule.Click({KeyCode = Enum.KeyCode.ButtonX}, false, nil, true)
-                    else
-                        -- fallback: invia RemoteEvent PunchAttack
-                        local args = {
-                            {
-                                {
-                                    Event = "PunchAttack",
-                                    Enemy = "72ab969bcaf54f159698d5e9f7fe31db"
-                                },
-                                "\004"
-                            }
-                        }
-                        dataRemoteEvent:FireServer(unpack(args))
-                    end
-                end)
-                task.wait(autoClickDelay or 0.1)
-            else
-                task.wait(0.12)
-            end
-        end
-    end)
-end
-
--- ---------- InfCastle ----------
 local function startCastle()
     fireSafe({ { { Event = "InfiniteCastleAction", Action = "Create" }, "\r" } })
     task.wait(1)
     fireSafe({ { { Dungeon = 3604563306, Event = "InfiniteCastleAction", Action = "Start" }, "\r" } })
     task.wait(1)
-    if standCastleEnabled then
-        safeStandAt(castleCFrame)
-    end
+    if standCastleEnabled then safeStandAt(castleCFrame) end
 end
 
 local function restartCastle()
@@ -129,30 +52,39 @@ end
 
 CastleTab:CreateButton({ Name = "Start Infinite Castle (Manual)", Callback = startCastle })
 CastleTab:CreateToggle({
-    Name = "Stand in the Middle (InfCastle) - Use only in InfCastle",
+    Name = "Stand in the Middle (InfCastle)",
     CurrentValue = false,
     Flag = "StandCastleFlag",
-    Callback = function(Value)
-        standCastleEnabled = Value
-        if Value then safeStandAt(castleCFrame) end
-    end
+    Callback = function(Value) standCastleEnabled = Value if Value then safeStandAt(castleCFrame) end end
 })
 CastleTab:CreateToggle({
-    Name = "Auto-Restart (on Portal Destroyed)",
+    Name = "Auto-Restart",
     CurrentValue = false,
     Flag = "AutoRestartCastleFlag",
     Callback = function(Value) autoRestartCastle = Value end
 })
+CastleTab:CreateToggle({
+    Name = "Auto Click",
+    CurrentValue = false,
+    Flag = "AutoClickCastle",
+    Callback = function(Value) autoClickEnabled = Value end
+})
+CastleTab:CreateSlider({
+    Name = "Auto Click Delay",
+    Range = {0.1, 0.5},
+    Increment = 0.01,
+    Suffix = "s",
+    CurrentValue = autoClickDelay,
+    Flag = "AutoClickDelayCastle",
+    Callback = function(Value) autoClickDelay = Value end
+})
 
--- ---------- InfDesert ----------
 local function startDesert()
     fireSafe({ { { Event = "InfiniteModeAction", Action = "Create" }, "\r" } })
     task.wait(1)
     fireSafe({ { { Dungeon = 3604563306, Event = "InfiniteModeAction", Action = "Start" }, "\r" } })
     task.wait(1)
-    if standDesertEnabled then
-        safeStandAt(desertCFrame)
-    end
+    if standDesertEnabled then safeStandAt(desertCFrame) end
 end
 
 local function restartDesert()
@@ -163,71 +95,39 @@ end
 
 DesertTab:CreateButton({ Name = "Start Infinite Desert (Manual)", Callback = startDesert })
 DesertTab:CreateToggle({
-    Name = "Stand in the Middle (InfDesert) - Use only in InfDesert",
+    Name = "Stand in the Middle (InfDesert)",
     CurrentValue = false,
     Flag = "StandDesertFlag",
-    Callback = function(Value)
-        standDesertEnabled = Value
-        if Value then safeStandAt(desertCFrame) end
-    end
+    Callback = function(Value) standDesertEnabled = Value if Value then safeStandAt(desertCFrame) end end
 })
 DesertTab:CreateToggle({
-    Name = "Auto-Restart (on Portal Destroyed)",
+    Name = "Auto-Restart",
     CurrentValue = false,
     Flag = "AutoRestartDesertFlag",
     Callback = function(Value) autoRestartDesert = Value end
 })
-
--- ---------- UI: Toggle + Slider Auto Click (ultima posizione in ogni tab) ----------
-local castleAutoClickToggle = CastleTab:CreateToggle({
+DesertTab:CreateToggle({
     Name = "Auto Click",
     CurrentValue = false,
-    Flag = "AutoClickFlag",
-    Callback = function(Value)
-        autoClickEnabled = Value
-    end
+    Flag = "AutoClickDesert",
+    Callback = function(Value) autoClickEnabled = Value end
 })
--- Slider subito dopo il toggle
-local castleAutoClickSlider = CastleTab:CreateSlider({
+DesertTab:CreateSlider({
     Name = "Auto Click Delay",
-    Range = {0.01, 0.5},
-    Increment = 0.01,
-    Suffix = "s",
-    CurrentValue = autoClickDelay,
-    Flag = "AutoClickDelayCastle",
-    Callback = function(Value)
-        autoClickDelay = Value
-    end
-})
-
-local desertAutoClickToggle = DesertTab:CreateToggle({
-    Name = "Auto Click",
-    CurrentValue = false,
-    Flag = "AutoClickFlagDesert",
-    Callback = function(Value)
-        autoClickEnabled = Value
-    end
-})
-local desertAutoClickSlider = DesertTab:CreateSlider({
-    Name = "Auto Click Delay",
-    Range = {0.01, 0.5},
+    Range = {0.1, 0.5},
     Increment = 0.01,
     Suffix = "s",
     CurrentValue = autoClickDelay,
     Flag = "AutoClickDelayDesert",
-    Callback = function(Value)
-        autoClickDelay = Value
-    end
+    Callback = function(Value) autoClickDelay = Value end
 })
 
--- ---------- Teleport on respawn ----------
 player.CharacterAdded:Connect(function()
     task.wait(1)
     if standCastleEnabled then safeStandAt(castleCFrame) end
     if standDesertEnabled then safeStandAt(desertCFrame) end
 end)
 
--- ---------- Auto-Restart on Portal Destroy ----------
 dataRemoteEvent.OnClientEvent:Connect(function(...)
     local args = {...}
     local function recursiveCheck(tbl)
@@ -247,26 +147,23 @@ dataRemoteEvent.OnClientEvent:Connect(function(...)
     for _, v in ipairs(args) do recursiveCheck(v) end
 end)
 
--- ---------- Carica configurazione e inizializza stati salvati ----------
--- Carichiamo la config (così Rayfield imposta i CurrentValue dei widget)
+spawn(function()
+    repeat task.wait(0.1) until player:GetAttribute("Loaded") == true
+    local ReplicatedStorage = game:GetService("ReplicatedStorage")
+    local WeaponsModule = nil
+    pcall(function()
+        WeaponsModule = require(ReplicatedStorage:WaitForChild("SharedModules"):WaitForChild("WeaponsModule"))
+    end)
+    while true do
+        if autoClickEnabled and WeaponsModule then
+            pcall(function()
+                WeaponsModule.Click({KeyCode = Enum.KeyCode.ButtonX}, false, nil, true)
+            end)
+            task.wait(autoClickDelay)
+        else
+            task.wait(0.1)
+        end
+    end
+end)
+
 Rayfield:LoadConfiguration("InfiniteModesHub")
-
--- Leggiamo lo stato salvato (se presente) e inizializziamo le variabili locali
--- Preferiamo i valori dei toggle creati (sono gli oggetti che Rayfield popola)
-if castleAutoClickToggle and type(castleAutoClickToggle) == "table" then
-    autoClickEnabled = castleAutoClickToggle.CurrentValue or autoClickEnabled
-end
-if desertAutoClickToggle and type(desertAutoClickToggle) == "table" then
-    autoClickEnabled = desertAutoClickToggle.CurrentValue or autoClickEnabled
-end
--- leggiamo il valore del delay dallo slider (uno qualsiasi, vanno in sync)
-if castleAutoClickSlider and type(castleAutoClickSlider) == "table" then
-    autoClickDelay = castleAutoClickSlider.CurrentValue or autoClickDelay
-elseif desertAutoClickSlider and type(desertAutoClickSlider) == "table" then
-    autoClickDelay = desertAutoClickSlider.CurrentValue or autoClickDelay
-end
-
--- Avviamo il loop Auto Click (dopo aver caricato config e aver inizializzato flag)
-startAutoClickLoop()
-
--- Fine script
