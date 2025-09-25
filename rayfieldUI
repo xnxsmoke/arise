@@ -24,6 +24,7 @@ local standDesertEnabled = false
 local autoRestartCastle = false
 local autoRestartDesert = false
 local autoClickEnabled = false
+local uiHidden = false
 
 local function safeStandAt(cf)
     local char = player.Character
@@ -145,15 +146,16 @@ MiscTab:CreateToggle({
         end
     end
 })
+
 MiscTab:CreateToggle({
     Name = "Hide UI",
     CurrentValue = false,
     Flag = "HideUIFlag",
     Callback = function(Value)
-        if Value then
-            Window:SetVisible(false)
-        else
-            Window:SetVisible(true)
+        uiHidden = Value
+        local gui = game:GetService("CoreGui"):FindFirstChild("Rayfield")
+        if gui then
+            gui.Enabled = not uiHidden
         end
     end
 })
