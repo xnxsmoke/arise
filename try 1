@@ -25,7 +25,7 @@ local standDesertEnabled = false
 local autoRestartCastle = false
 local autoRestartDesert = false
 local ultraClickEnabled = false
-local ultraClickDelay = 0.03 -- 30ms tra i click
+local ultraClickDelay = 0.1 -- minimo sicuro tra i click
 
 -- ---------- Helpers ----------
 local function safeStandAt(cf)
@@ -57,7 +57,7 @@ spawn(function()
 			end)
 			task.wait(ultraClickDelay)
 		else
-			task.wait(0.05)
+			task.wait(0.1)
 		end
 	end
 end)
@@ -95,8 +95,8 @@ CastleTab:CreateToggle({
     Flag = "AutoRestartCastleFlag",
     Callback = function(Value) autoRestartCastle = Value end
 })
--- Ultra Fast Auto Click bottone ultimo
-CastleTab:CreateToggle({
+-- Toggle Ultra Fast Auto Click ultimo
+local castleUltraToggle = CastleTab:CreateToggle({
 	Name = "Ultra Fast Auto Click",
 	CurrentValue = false,
 	Flag = "UltraClickFlag",
@@ -104,6 +104,8 @@ CastleTab:CreateToggle({
 		ultraClickEnabled = Value
 	end
 })
+-- Imposta il toggle all'avvio secondo la config salvata
+ultraClickEnabled = castleUltraToggle.CurrentValue
 
 -- ---------- InfDesert ----------
 local function startDesert()
@@ -138,8 +140,8 @@ DesertTab:CreateToggle({
     Flag = "AutoRestartDesertFlag",
     Callback = function(Value) autoRestartDesert = Value end
 })
--- Ultra Fast Auto Click bottone ultimo
-DesertTab:CreateToggle({
+-- Toggle Ultra Fast Auto Click ultimo
+local desertUltraToggle = DesertTab:CreateToggle({
 	Name = "Ultra Fast Auto Click",
 	CurrentValue = false,
 	Flag = "UltraClickFlagDesert",
@@ -147,6 +149,8 @@ DesertTab:CreateToggle({
 		ultraClickEnabled = Value
 	end
 })
+-- Imposta il toggle all'avvio secondo la config salvata
+ultraClickEnabled = desertUltraToggle.CurrentValue
 
 -- ---------- Teleport on respawn ----------
 player.CharacterAdded:Connect(function()
