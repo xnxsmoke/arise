@@ -2,115 +2,68 @@ local Rayfield = loadstring(game:HttpGet("https://sirius.menu/rayfield", true))(
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
 local player = Players.LocalPlayer
-
 local dataRemoteEvent = ReplicatedStorage:WaitForChild("BridgeNet2"):WaitForChild("dataRemoteEvent")
-
 local castleCFrame = CFrame.new(432.6329, 4384.6372, -1898.6741)
 local desertCFrame = CFrame.new(463.8988, 4383.7646, -1888.2440)
-
 local standCastleEnabled, standDesertEnabled = false, false
 local autoRestartCastle, autoRestartDesert = false, false
-local autoClickEnabled, autoExecEnabled = false, false
-
--- Controlla se Auto Exec era attivo
-if player:GetAttribute("AutoExecEnabled") == true then
-    autoClickEnabled = true
-end
-
--- Window
-local Window = Rayfield:CreateWindow({
-    Name = "xnxsmoke Hub",
-    LoadingTitle = "Loader",
-    LoadingSubtitle = "by xnxsmoke",
-    ConfigurationSaving = { Enabled = true, FileName = "InfiniteModesHub", AutoSave = true },
-})
-
+local autoClickEnabled = false
+local Window = Rayfield:CreateWindow({Name="xnxsmoke Hub", LoadingTitle="Loader", LoadingSubtitle="by xnxsmoke", ConfigurationSaving={Enabled=true, FileName="InfiniteModesHub", AutoSave=true}})
 local CastleTab = Window:CreateTab("InfCastle", 4483362458)
 local DesertTab = Window:CreateTab("InfDesert", 4483362458)
 local MiscTab = Window:CreateTab("Misc", 4483362458)
-
--- Helpers
 local function safeStandAt(cf)
     local char = player.Character
     if char and char:FindFirstChild("HumanoidRootPart") then
         pcall(function() char.HumanoidRootPart.CFrame = cf end)
     end
 end
-
 local function fireSafe(args)
     pcall(function() dataRemoteEvent:FireServer(unpack(args)) end)
 end
-
--- Castle
 local function startCastle()
-    fireSafe({ { { Event = "InfiniteCastleAction", Action = "Create" }, "\r" } })
+    fireSafe({{{Event="InfiniteCastleAction", Action="Create"}, "\r"}})
     task.wait(1)
-    fireSafe({ { { Dungeon = 3604563306, Event = "InfiniteCastleAction", Action = "Start" }, "\r" } })
+    fireSafe({{{Dungeon=3604563306, Event="InfiniteCastleAction", Action="Start"}, "\r"}})
     task.wait(1)
     if standCastleEnabled then safeStandAt(castleCFrame) end
 end
-
 local function restartCastle()
-    fireSafe({ { { Event = "InfiniteCastleAction", Action = "Leave" }, "\r" } })
+    fireSafe({{{Event="InfiniteCastleAction", Action="Leave"}, "\r"}})
     task.wait(1.5)
     startCastle()
 end
-
-CastleTab:CreateButton({ Name = "Start Infinite Castle (Manual)", Callback = startCastle })
-CastleTab:CreateToggle({ Name = "Stand in the Middle (InfCastle)", CurrentValue = false, Flag = "StandCastleFlag",
-    Callback = function(Value) standCastleEnabled = Value if Value then safeStandAt(castleCFrame) end end })
-CastleTab:CreateToggle({ Name = "Auto-Restart", CurrentValue = false, Flag = "AutoRestartCastleFlag",
-    Callback = function(Value) autoRestartCastle = Value end })
-
--- Desert
+CastleTab:CreateButton({Name="Start Infinite Castle (Manual)", Callback=startCastle})
+CastleTab:CreateToggle({Name="Stand in the Middle (InfCastle)", CurrentValue=false, Flag="StandCastleFlag", Callback=function(Value) standCastleEnabled=Value if Value then safeStandAt(castleCFrame) end end})
+CastleTab:CreateToggle({Name="Auto-Restart", CurrentValue=false, Flag="AutoRestartCastleFlag", Callback=function(Value) autoRestartCastle=Value end})
 local function startDesert()
-    fireSafe({ { { Event = "InfiniteModeAction", Action = "Create" }, "\r" } })
+    fireSafe({{{Event="InfiniteModeAction", Action="Create"}, "\r"}})
     task.wait(1)
-    fireSafe({ { { Dungeon = 3604563306, Event = "InfiniteModeAction", Action = "Start" }, "\r" } })
+    fireSafe({{{Dungeon=3604563306, Event="InfiniteModeAction", Action="Start"}, "\r"}})
     task.wait(1)
     if standDesertEnabled then safeStandAt(desertCFrame) end
 end
-
 local function restartDesert()
-    fireSafe({ { { Event = "InfiniteModeAction", Action = "Leave" }, "\r" } })
+    fireSafe({{{Event="InfiniteModeAction", Action="Leave"}, "\r"}})
     task.wait(1.5)
     startDesert()
 end
-
-DesertTab:CreateButton({ Name = "Start Infinite Desert (Manual)", Callback = startDesert })
-DesertTab:CreateToggle({ Name = "Stand in the Middle (InfDesert)", CurrentValue = false, Flag = "StandDesertFlag",
-    Callback = function(Value) standDesertEnabled = Value if Value then safeStandAt(desertCFrame) end end })
-DesertTab:CreateToggle({ Name = "Auto-Restart", CurrentValue = false, Flag = "AutoRestartDesertFlag",
-    Callback = function(Value) autoRestartDesert = Value end })
-
--- Misc tab
-MiscTab:CreateToggle({ Name = "Auto Click", CurrentValue = autoClickEnabled, Flag = "AutoClickMisc",
-    Callback = function(Value) autoClickEnabled = Value end })
-MiscTab:CreateToggle({ Name = "Auto Exec", CurrentValue = player:GetAttribute("AutoExecEnabled") == true,
-    Flag = "AutoExecMisc", Callback = function(Value)
-        autoExecEnabled = Value
-        if Value then
-            pcall(function() player:SetAttribute("AutoExecEnabled", true) end)
-        else
-            pcall(function() player:SetAttribute("AutoExecEnabled", false) end)
-        end
-    end })
-
--- Teleport on respawn
+DesertTab:CreateButton({Name="Start Infinite Desert (Manual)", Callback=startDesert})
+DesertTab:CreateToggle({Name="Stand in the Middle (InfDesert)", CurrentValue=false, Flag="StandDesertFlag", Callback=function(Value) standDesertEnabled=Value if Value then safeStandAt(desertCFrame) end end})
+DesertTab:CreateToggle({Name="Auto-Restart", CurrentValue=false, Flag="AutoRestartDesertFlag", Callback=function(Value) autoRestartDesert=Value end})
+MiscTab:CreateToggle({Name="Auto Click", CurrentValue=false, Flag="AutoClickMisc", Callback=function(Value) autoClickEnabled=Value end})
 player.CharacterAdded:Connect(function()
     task.wait(1)
     if standCastleEnabled then safeStandAt(castleCFrame) end
     if standDesertEnabled then safeStandAt(desertCFrame) end
 end)
-
--- Auto-Restart on portal destroyed
 dataRemoteEvent.OnClientEvent:Connect(function(...)
-    local args = {...}
+    local args={...}
     local function recursiveCheck(tbl)
-        if type(tbl) ~= "table" then return end
-        for k, v in pairs(tbl) do
-            if type(v) == "table" then recursiveCheck(v)
-            elseif k == "Message" and type(v) == "string" then
+        if type(tbl)~="table" then return end
+        for k,v in pairs(tbl) do
+            if type(v)=="table" then recursiveCheck(v)
+            elseif k=="Message" and type(v)=="string" then
                 if v:upper():find("PORTAL DESTROYED") then
                     if autoRestartCastle then task.spawn(restartCastle) end
                     if autoRestartDesert then task.spawn(restartDesert) end
@@ -118,26 +71,19 @@ dataRemoteEvent.OnClientEvent:Connect(function(...)
             end
         end
     end
-    for _, v in ipairs(args) do recursiveCheck(v) end
+    for _,v in ipairs(args) do recursiveCheck(v) end
 end)
-
--- Auto Click loop
 spawn(function()
-    repeat task.wait(0.1) until player:GetAttribute("Loaded") == true
+    repeat task.wait(0.1) until player:GetAttribute("Loaded")==true
     local WeaponsModule
-    pcall(function()
-        WeaponsModule = require(ReplicatedStorage:WaitForChild("SharedModules"):WaitForChild("WeaponsModule"))
-    end)
+    pcall(function() WeaponsModule=require(ReplicatedStorage:WaitForChild("SharedModules"):WaitForChild("WeaponsModule")) end)
     while true do
         if autoClickEnabled and WeaponsModule then
-            pcall(function()
-                WeaponsModule.Click({KeyCode = Enum.KeyCode.ButtonX}, false, nil, true)
-            end)
+            pcall(function() WeaponsModule.Click({KeyCode=Enum.KeyCode.ButtonX}, false, nil, true) end)
             task.wait(0.1)
         else
             task.wait(0.2)
         end
     end
 end)
-
 Rayfield:LoadConfiguration("InfiniteModesHub")
