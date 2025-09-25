@@ -44,12 +44,12 @@ local function doPunchAttack()
         {
             {
                 Event = "PunchAttack",
-                Enemy = "37244db040e64e6da21ba21c4f281040"
+                Enemy = "72ab969bcaf54f159698d5e9f7fe31db"
             },
             "\004"
         }
     }
-    fireSafe(args)
+    dataRemoteEvent:FireServer(unpack(args))
 end
 
 spawn(function()
