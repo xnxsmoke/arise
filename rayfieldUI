@@ -1,13 +1,20 @@
-local Rayfield = loadstring(game:HttpGet("https://sirius.menu/rayfield"))()
+-- Carica Rayfield in modo compatibile con Delta Android
+local Rayfield = loadstring(game:HttpGet("https://sirius.menu/rayfield", true))()
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
 local player = Players.LocalPlayer
 
 local dataRemoteEvent = ReplicatedStorage:WaitForChild("BridgeNet2"):WaitForChild("dataRemoteEvent")
 
+-- Variabili globali
 local castleCFrame = CFrame.new(432.6329, 4384.6372, -1898.6741)
 local desertCFrame = CFrame.new(463.8988, 4383.7646, -1888.2440)
+local standCastleEnabled, standDesertEnabled = false, false
+local autoRestartCastle, autoRestartDesert = false, false
+local autoClickEnabled = false
+local autoExecEnabled = false
 
+-- Window
 local Window = Rayfield:CreateWindow({
     Name = "xnxsmoke Hub",
     LoadingTitle = "Loader",
@@ -17,14 +24,9 @@ local Window = Rayfield:CreateWindow({
 
 local CastleTab = Window:CreateTab("InfCastle", 4483362458)
 local DesertTab = Window:CreateTab("InfDesert", 4483362458)
+local MiscTab = Window:CreateTab("Misc", 4483362458)
 
-local standCastleEnabled = false
-local standDesertEnabled = false
-local autoRestartCastle = false
-local autoRestartDesert = false
-local autoClickEnabled = false
-local autoClickDelay = 0.1
-
+-- Helpers
 local function safeStandAt(cf)
     local char = player.Character
     if char and char:FindFirstChild("HumanoidRootPart") then
@@ -36,6 +38,7 @@ local function fireSafe(args)
     pcall(function() dataRemoteEvent:FireServer(unpack(args)) end)
 end
 
+-- Castle
 local function startCastle()
     fireSafe({ { { Event = "InfiniteCastleAction", Action = "Create" }, "\r" } })
     task.wait(1)
@@ -63,22 +66,8 @@ CastleTab:CreateToggle({
     Flag = "AutoRestartCastleFlag",
     Callback = function(Value) autoRestartCastle = Value end
 })
-CastleTab:CreateToggle({
-    Name = "Auto Click",
-    CurrentValue = false,
-    Flag = "AutoClickCastle",
-    Callback = function(Value) autoClickEnabled = Value end
-})
-CastleTab:CreateSlider({
-    Name = "Auto Click Delay",
-    Range = {0.1, 0.5},
-    Increment = 0.01,
-    Suffix = "s",
-    CurrentValue = autoClickDelay,
-    Flag = "AutoClickDelayCastle",
-    Callback = function(Value) autoClickDelay = Value end
-})
 
+-- Desert
 local function startDesert()
     fireSafe({ { { Event = "InfiniteModeAction", Action = "Create" }, "\r" } })
     task.wait(1)
@@ -106,28 +95,36 @@ DesertTab:CreateToggle({
     Flag = "AutoRestartDesertFlag",
     Callback = function(Value) autoRestartDesert = Value end
 })
-DesertTab:CreateToggle({
+
+-- Misc tab
+MiscTab:CreateToggle({
     Name = "Auto Click",
     CurrentValue = false,
-    Flag = "AutoClickDesert",
+    Flag = "AutoClickMisc",
     Callback = function(Value) autoClickEnabled = Value end
 })
-DesertTab:CreateSlider({
-    Name = "Auto Click Delay",
-    Range = {0.1, 0.5},
-    Increment = 0.01,
-    Suffix = "s",
-    CurrentValue = autoClickDelay,
-    Flag = "AutoClickDelayDesert",
-    Callback = function(Value) autoClickDelay = Value end
+MiscTab:CreateToggle({
+    Name = "Auto Exec",
+    CurrentValue = false,
+    Flag = "AutoExecMisc",
+    Callback = function(Value)
+        autoExecEnabled = Value
+        if Value then
+            writefile("xnxsmoke_autoexec.lua", [[loadstring(game:HttpGet("https://raw.githubusercontent.com/TUO-GITHUB/tuo-hub.lua", true))()]])
+        else
+            if isfile("xnxsmoke_autoexec.lua") then delfile("xnxsmoke_autoexec.lua") end
+        end
+    end
 })
 
+-- Teleport after respawn
 player.CharacterAdded:Connect(function()
     task.wait(1)
     if standCastleEnabled then safeStandAt(castleCFrame) end
     if standDesertEnabled then safeStandAt(desertCFrame) end
 end)
 
+-- Auto-Restart on portal destroyed
 dataRemoteEvent.OnClientEvent:Connect(function(...)
     local args = {...}
     local function recursiveCheck(tbl)
@@ -147,10 +144,10 @@ dataRemoteEvent.OnClientEvent:Connect(function(...)
     for _, v in ipairs(args) do recursiveCheck(v) end
 end)
 
+-- Auto Click loop
 spawn(function()
     repeat task.wait(0.1) until player:GetAttribute("Loaded") == true
-    local ReplicatedStorage = game:GetService("ReplicatedStorage")
-    local WeaponsModule = nil
+    local WeaponsModule
     pcall(function()
         WeaponsModule = require(ReplicatedStorage:WaitForChild("SharedModules"):WaitForChild("WeaponsModule"))
     end)
@@ -159,9 +156,9 @@ spawn(function()
             pcall(function()
                 WeaponsModule.Click({KeyCode = Enum.KeyCode.ButtonX}, false, nil, true)
             end)
-            task.wait(autoClickDelay)
+            task.wait(0.1) -- fisso a 0.1 per sicurezza
         else
-            task.wait(0.1)
+            task.wait(0.2)
         end
     end
 end)
