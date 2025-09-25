@@ -7,7 +7,7 @@ local castleCFrame = CFrame.new(432.6329, 4384.6372, -1898.6741)
 local desertCFrame = CFrame.new(463.8988, 4383.7646, -1888.2440)
 local standCastleEnabled, standDesertEnabled = false, false
 local autoRestartCastle, autoRestartDesert = false, false
-local autoClickEnabled, autoSpeedEnabled = false, false
+local autoClickEnabled = false
 local Window = Rayfield:CreateWindow({Name="xnxsmoke Hub", LoadingTitle="Loader", LoadingSubtitle="by xnxsmoke", ConfigurationSaving={Enabled=true, FileName="InfiniteModesHub", AutoSave=true}})
 local CastleTab = Window:CreateTab("InfCastle", 4483362458)
 local DesertTab = Window:CreateTab("InfDesert", 4483362458)
@@ -45,46 +45,34 @@ CastleTab:CreateToggle({
     Flag="StandCastleFlag",
     Callback=function(Value)
         standCastleEnabled = Value
-        if Value then
-            safeStandAt(castleCFrame)
-            task.spawn(function()
-                task.wait(1)
-                if autoSpeedEnabled then
-                    local dropdownValue = Rayfield:GetFlag("CastleSpeedDropdown") or "1"
-                    local speed = tonumber(dropdownValue)
-                    local args = {{{Speed=speed, Event="InfiniteCastleAction", Action="SpeedUp"}, "\r"}}
-                    fireSafe(args)
-                end
-            end)
-        end
+        if Value then safeStandAt(castleCFrame) end
     end
 })
 
 CastleTab:CreateToggle({Name="Auto-Restart", CurrentValue=false, Flag="AutoRestartCastleFlag", Callback=function(Value) autoRestartCastle=Value end})
 
-CastleTab:CreateDropdown({
-    Name = "Wave Speed",
-    Options = {"1","2","3"},
-    CurrentOption = "1",
-    Flag = "CastleSpeedDropdown",
-    Callback=function() end
-})
-
+-- Toggle Wave Speed 2
 CastleTab:CreateToggle({
-    Name = "Enable Wave Speed",
+    Name="Wave Speed 2",
     CurrentValue=false,
-    Flag = "AutoSpeedFlag",
+    Flag="WaveSpeed2Flag",
     Callback=function(Value)
-        autoSpeedEnabled = Value
         if Value then
             task.spawn(function()
-                while autoSpeedEnabled do
-                    local dropdownValue = Rayfield:GetFlag("CastleSpeedDropdown") or "1"
-                    local speed = tonumber(dropdownValue)
-                    local args = {{{Speed=speed, Event="InfiniteCastleAction", Action="SpeedUp"}, "\r"}}
-                    fireSafe(args)
-                    task.wait(1)
-                end
+                -- aspetta che il personaggio sia completamente spawnato
+                repeat task.wait(0.1) until player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+                task.wait(5) -- attendi 5 secondi
+                local args = {
+                    {
+                        {
+                            Speed = 2,
+                            Event = "InfiniteCastleAction",
+                            Action = "SpeedUp"
+                        },
+                        "\r"
+                    }
+                }
+                fireSafe(args)
             end)
         end
     end
