@@ -58,16 +58,11 @@ end
 
 CastleTab:CreateDropdown({
     Name = "Wave Speed",
-    Options = {"Default (1x)", "2x", "3x"},
-    CurrentOption = "Default (1x)",
+    Options = {"1", "2", "3"},
+    CurrentOption = "1",
     Flag = "CastleSpeedDropdown",
     Callback = function(option)
-        local speed = 1
-        if option == "2x" then
-            speed = 2
-        elseif option == "3x" then
-            speed = 3
-        end
+        local speed = tonumber(option)
         task.spawn(function()
             task.wait(5)
             sendCastleSpeed(speed)
