@@ -3,7 +3,6 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
 local player = Players.LocalPlayer
 local dataRemoteEvent = ReplicatedStorage:WaitForChild("BridgeNet2"):WaitForChild("dataRemoteEvent")
-local WeaponsModule = require(ReplicatedStorage.SharedModules.WeaponsModule)
 
 local castleCFrame = CFrame.new(432.6329, 4384.6372, -1898.6741)
 local desertCFrame = CFrame.new(463.8988, 4383.7646, -1888.2440)
@@ -24,7 +23,6 @@ local standDesertEnabled = false
 local autoRestartCastle = false
 local autoRestartDesert = false
 local autoClickEnabled = false
-local uiHidden = false
 
 local function safeStandAt(cf)
     local char = player.Character
@@ -130,6 +128,19 @@ DesertTab:CreateToggle({
 })
 
 -- Misc
+local function doPunch()
+    local args = {
+        {
+            {
+                Event = "PunchAttack",
+                Enemy = "72ab969bcaf54f159698d5e9f7fe31db"
+            },
+            "\004"
+        }
+    }
+    dataRemoteEvent:FireServer(unpack(args))
+end
+
 MiscTab:CreateToggle({
     Name = "Auto Click",
     CurrentValue = false,
@@ -140,7 +151,7 @@ MiscTab:CreateToggle({
             task.spawn(function()
                 while autoClickEnabled do
                     task.wait(0.1)
-                    WeaponsModule.Click({KeyCode = Enum.KeyCode.ButtonX}, false, nil, true)
+                    doPunch()
                 end
             end)
         end
@@ -152,10 +163,9 @@ MiscTab:CreateToggle({
     CurrentValue = false,
     Flag = "HideUIFlag",
     Callback = function(Value)
-        uiHidden = Value
         local gui = game:GetService("CoreGui"):FindFirstChild("Rayfield")
         if gui then
-            gui.Enabled = not uiHidden
+            gui.Enabled = not Value
         end
     end
 })
