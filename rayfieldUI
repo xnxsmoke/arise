@@ -1,4 +1,3 @@
--- xnxsmoke Hub Delta Android
 local Rayfield = loadstring(game:HttpGet("https://sirius.menu/rayfield", true))()
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
