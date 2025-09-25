@@ -24,6 +24,7 @@ local standCastleEnabled = false
 local standDesertEnabled = false
 local autoRestartCastle = false
 local autoRestartDesert = false
+local autoClickEnabled = false -- Flag per Auto Click
 
 -- ---------- Helpers ----------
 local function safeStandAt(cf)
@@ -36,6 +37,29 @@ end
 local function fireSafe(args)
     pcall(function() dataRemoteEvent:FireServer(unpack(args)) end)
 end
+
+-- ---------- Auto Click ----------
+local function doPunchAttack()
+    local args = {
+        {
+            {
+                Event = "PunchAttack",
+                Enemy = "37244db040e64e6da21ba21c4f281040"
+            },
+            "\004"
+        }
+    }
+    fireSafe(args)
+end
+
+spawn(function()
+    while true do
+        if autoClickEnabled then
+            doPunchAttack()
+        end
+        task.wait(0.1)
+    end
+end)
 
 -- ---------- InfCastle ----------
 local function startCastle()
@@ -70,6 +94,14 @@ CastleTab:CreateToggle({
     Flag = "AutoRestartCastleFlag",
     Callback = function(Value) autoRestartCastle = Value end
 })
+CastleTab:CreateToggle({
+    Name = "Auto Click",
+    CurrentValue = false,
+    Flag = "AutoClickFlag",
+    Callback = function(Value)
+        autoClickEnabled = Value
+    end
+})
 
 -- ---------- InfDesert ----------
 local function startDesert()
@@ -103,6 +135,14 @@ DesertTab:CreateToggle({
     CurrentValue = false,
     Flag = "AutoRestartDesertFlag",
     Callback = function(Value) autoRestartDesert = Value end
+})
+DesertTab:CreateToggle({
+    Name = "Auto Click",
+    CurrentValue = false,
+    Flag = "AutoClickFlagDesert",
+    Callback = function(Value)
+        autoClickEnabled = Value
+    end
 })
 
 -- ---------- Teleport on respawn ----------
