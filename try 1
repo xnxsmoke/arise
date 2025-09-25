@@ -24,7 +24,8 @@ local standCastleEnabled = false
 local standDesertEnabled = false
 local autoRestartCastle = false
 local autoRestartDesert = false
-local autoClickEnabled = false -- Flag per Auto Click
+local fastAutoClickEnabled = false -- Flag per Fast Auto Click
+local clickDelay = 0.1            -- Delay tra un click e l'altro
 
 -- ---------- Helpers ----------
 local function safeStandAt(cf)
@@ -38,28 +39,40 @@ local function fireSafe(args)
     pcall(function() dataRemoteEvent:FireServer(unpack(args)) end)
 end
 
--- ---------- Auto Click ----------
-local function doPunchAttack()
-    local args = {
-        {
-            {
-                Event = "PunchAttack",
-                Enemy = "72ab969bcaf54f159698d5e9f7fe31db"
-            },
-            "\004"
-        }
-    }
-    dataRemoteEvent:FireServer(unpack(args))
-end
-
+-- ---------- Fast Auto Click ----------
 spawn(function()
-    while true do
-        if autoClickEnabled then
-            doPunchAttack()
-        end
-        task.wait(0.1)
-    end
+	while true do
+		if fastAutoClickEnabled then
+			pcall(function()
+				require(ReplicatedStorage.SharedModules.WeaponsModule).Click({
+					KeyCode = Enum.KeyCode.ButtonX;
+				}, false, nil, true)
+			end)
+			task.wait(clickDelay)
+		else
+			task.wait(0.1)
+		end
+	end
 end)
+
+-- Toggle Fast Auto Click per entrambe le tab
+CastleTab:CreateToggle({
+	Name = "Fast Auto Click",
+	CurrentValue = false,
+	Flag = "FastAutoClickFlag",
+	Callback = function(Value)
+		fastAutoClickEnabled = Value
+	end
+})
+
+DesertTab:CreateToggle({
+	Name = "Fast Auto Click",
+	CurrentValue = false,
+	Flag = "FastAutoClickFlagDesert",
+	Callback = function(Value)
+		fastAutoClickEnabled = Value
+	end
+})
 
 -- ---------- InfCastle ----------
 local function startCastle()
@@ -94,14 +107,6 @@ CastleTab:CreateToggle({
     Flag = "AutoRestartCastleFlag",
     Callback = function(Value) autoRestartCastle = Value end
 })
-CastleTab:CreateToggle({
-    Name = "Auto Click",
-    CurrentValue = false,
-    Flag = "AutoClickFlag",
-    Callback = function(Value)
-        autoClickEnabled = Value
-    end
-})
 
 -- ---------- InfDesert ----------
 local function startDesert()
@@ -135,14 +140,6 @@ DesertTab:CreateToggle({
     CurrentValue = false,
     Flag = "AutoRestartDesertFlag",
     Callback = function(Value) autoRestartDesert = Value end
-})
-DesertTab:CreateToggle({
-    Name = "Auto Click",
-    CurrentValue = false,
-    Flag = "AutoClickFlagDesert",
-    Callback = function(Value)
-        autoClickEnabled = Value
-    end
 })
 
 -- ---------- Teleport on respawn ----------
