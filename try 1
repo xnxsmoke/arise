@@ -3,6 +3,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
 local player = Players.LocalPlayer
 local dataRemoteEvent = ReplicatedStorage:WaitForChild("BridgeNet2"):WaitForChild("dataRemoteEvent")
+local WeaponsModule = require(ReplicatedStorage.SharedModules.WeaponsModule)
 
 -- Coordinate
 local castleCFrame = CFrame.new(432.6329, 4384.6372, -1898.6741)
@@ -24,8 +25,7 @@ local standCastleEnabled = false
 local standDesertEnabled = false
 local autoRestartCastle = false
 local autoRestartDesert = false
-local ultraClickEnabled = false
-local ultraClickDelay = 0.1 -- minimo sicuro tra i click
+local autoClickEnabled = false
 
 -- ---------- Helpers ----------
 local function safeStandAt(cf)
@@ -39,23 +39,19 @@ local function fireSafe(args)
     pcall(function() dataRemoteEvent:FireServer(unpack(args)) end)
 end
 
--- ---------- Ultra Fast Auto Click ----------
+-- ---------- Auto Click ----------
+-- Aspetta che il giocatore sia completamente caricato
 spawn(function()
+	repeat
+		task.wait(0.1)
+	until player:GetAttribute("Loaded") == true
+
 	while true do
-		if ultraClickEnabled then
-			local args = {
-				{
-					{
-						Event = "PunchAttack",
-						Enemy = "72ab969bcaf54f159698d5e9f7fe31db"
-					},
-					"\004"
-				}
-			}
+		if autoClickEnabled then
 			pcall(function()
-				dataRemoteEvent:FireServer(unpack(args))
+				WeaponsModule.Click({KeyCode = Enum.KeyCode.ButtonX}, false, nil, true)
 			end)
-			task.wait(ultraClickDelay)
+			task.wait(0.01) -- delay minimo tra i click
 		else
 			task.wait(0.1)
 		end
@@ -95,17 +91,17 @@ CastleTab:CreateToggle({
     Flag = "AutoRestartCastleFlag",
     Callback = function(Value) autoRestartCastle = Value end
 })
--- Toggle Ultra Fast Auto Click ultimo
-local castleUltraToggle = CastleTab:CreateToggle({
-	Name = "Ultra Fast Auto Click",
+-- Toggle Auto Click ultimo
+local castleAutoClickToggle = CastleTab:CreateToggle({
+	Name = "Auto Click",
 	CurrentValue = false,
-	Flag = "UltraClickFlag",
+	Flag = "AutoClickFlag",
 	Callback = function(Value)
-		ultraClickEnabled = Value
+		autoClickEnabled = Value
 	end
 })
--- Imposta il toggle all'avvio secondo la config salvata
-ultraClickEnabled = castleUltraToggle.CurrentValue
+-- Imposta stato salvato da Rayfield
+autoClickEnabled = castleAutoClickToggle.CurrentValue
 
 -- ---------- InfDesert ----------
 local function startDesert()
@@ -140,17 +136,17 @@ DesertTab:CreateToggle({
     Flag = "AutoRestartDesertFlag",
     Callback = function(Value) autoRestartDesert = Value end
 })
--- Toggle Ultra Fast Auto Click ultimo
-local desertUltraToggle = DesertTab:CreateToggle({
-	Name = "Ultra Fast Auto Click",
+-- Toggle Auto Click ultimo
+local desertAutoClickToggle = DesertTab:CreateToggle({
+	Name = "Auto Click",
 	CurrentValue = false,
-	Flag = "UltraClickFlagDesert",
+	Flag = "AutoClickFlagDesert",
 	Callback = function(Value)
-		ultraClickEnabled = Value
+		autoClickEnabled = Value
 	end
 })
--- Imposta il toggle all'avvio secondo la config salvata
-ultraClickEnabled = desertUltraToggle.CurrentValue
+-- Imposta stato salvato da Rayfield
+autoClickEnabled = desertAutoClickToggle.CurrentValue
 
 -- ---------- Teleport on respawn ----------
 player.CharacterAdded:Connect(function()
