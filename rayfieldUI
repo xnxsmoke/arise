@@ -35,6 +35,30 @@ local function fireSafe(args)
     pcall(function() dataRemoteEvent:FireServer(unpack(args)) end)
 end
 
+-- Funzione per auto-rejoin sicuro con ritardo casuale
+local function safeRejoin(joinFunction)
+    task.spawn(function()
+        local success = false
+        local attempts = 0
+        while not success and attempts < 5 do
+            attempts += 1
+            local delayTime = math.random(3,6)
+            print("[AutoRejoin] Tentativo #" .. attempts .. ", attendo " .. delayTime .. " secondi prima del join")
+            task.wait(delayTime)
+            local ok, err = pcall(joinFunction)
+            if ok then
+                print("[AutoRejoin] Join completato!")
+                success = true
+            else
+                warn("[AutoRejoin] Errore nel join: ".. tostring(err))
+            end
+        end
+        if not success then
+            warn("[AutoRejoin] Non sono riuscito a riconnettermi dopo 5 tentativi.")
+        end
+    end)
+end
+
 -- InfCastle
 local function startCastle()
     fireSafe({ { { Event = "InfiniteCastleAction", Action = "Create" }, "\r" } })
@@ -47,9 +71,7 @@ local function startCastle()
 end
 
 local function restartCastle()
-    fireSafe({ { { Event = "InfiniteCastleAction", Action = "Leave" }, "\r" } })
-    task.wait(1.5)
-    startCastle()
+    safeRejoin(startCastle)
 end
 
 CastleTab:CreateButton({ Name = "Start Infinite Castle (Manual)", Callback = startCastle })
@@ -105,9 +127,7 @@ local function startDesert()
 end
 
 local function restartDesert()
-    fireSafe({ { { Event = "InfiniteModeAction", Action = "Leave" }, "\r" } })
-    task.wait(1.5)
-    startDesert()
+    safeRejoin(startDesert)
 end
 
 DesertTab:CreateButton({ Name = "Start Infinite Desert (Manual)", Callback = startDesert })
@@ -136,7 +156,6 @@ MiscTab:CreateToggle({
         autoClickEnabled = Value
         if Value then
             task.spawn(function()
-                -- Vecchio metodo che dava errori nella console ma funziona in parte
                 local WeaponsModule = require(game:GetService("ReplicatedStorage").SharedModules.WeaponsModule)
                 while autoClickEnabled do
                     task.wait(0.1)
@@ -167,8 +186,8 @@ dataRemoteEvent.OnClientEvent:Connect(function(...)
             elseif k == "Message" and type(v) == "string" then
                 local msg = v:upper()
                 if msg:find("PORTAL DESTROYED") then
-                    if autoRestartCastle then task.spawn(restartCastle) end
-                    if autoRestartDesert then task.spawn(restartDesert) end
+                    if autoRestartCastle then restartCastle() end
+                    if autoRestartDesert then restartDesert() end
                 end
             end
         end
