@@ -39,35 +39,42 @@ local function restartCastle()
 end
 
 CastleTab:CreateButton({Name="Start Infinite Castle (Manual)", Callback=startCastle})
-CastleTab:CreateToggle({Name="Stand in the Middle (InfCastle)", CurrentValue=false, Flag="StandCastleFlag", Callback=function(Value) standCastleEnabled=Value if Value then safeStandAt(castleCFrame) end end})
-CastleTab:CreateToggle({Name="Auto-Restart", CurrentValue=false, Flag="AutoRestartCastleFlag", Callback=function(Value) autoRestartCastle=Value end})
+CastleTab:CreateToggle({
+    Name="Stand in the Middle (InfCastle)",
+    CurrentValue=false,
+    Flag="StandCastleFlag",
+    Callback=function(Value)
+        standCastleEnabled = Value
+        if Value then
+            safeStandAt(castleCFrame)
+            task.spawn(function()
+                task.wait(1)
+                local dropdownValue = Rayfield:GetFlag("CastleSpeedDropdown") or "1"
+                local speed = tonumber(dropdownValue)
+                local args = {
+                    {
+                        {
+                            Speed = speed,
+                            Event = "InfiniteCastleAction",
+                            Action = "SpeedUp"
+                        },
+                        "\r"
+                    }
+                }
+                fireSafe(args)
+            end)
+        end
+    end
+})
 
-local function sendCastleSpeed(speed)
-    local args = {
-        {
-            {
-                Speed = speed,
-                Event = "InfiniteCastleAction",
-                Action = "SpeedUp"
-            },
-            "\r"
-        }
-    }
-    fireSafe(args)
-end
+CastleTab:CreateToggle({Name="Auto-Restart", CurrentValue=false, Flag="AutoRestartCastleFlag", Callback=function(Value) autoRestartCastle=Value end})
 
 CastleTab:CreateDropdown({
     Name = "Wave Speed",
-    Options = {"1", "2", "3"},
+    Options = {"1","2","3"},
     CurrentOption = "1",
     Flag = "CastleSpeedDropdown",
-    Callback = function(option)
-        local speed = tonumber(option)
-        task.spawn(function()
-            task.wait(5)
-            sendCastleSpeed(speed)
-        end)
-    end
+    Callback=function() end
 })
 
 local function startDesert()
