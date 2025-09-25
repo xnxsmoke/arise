@@ -1,4 +1,4 @@
--- Carica Rayfield in modo compatibile con Delta Android
+-- xnxsmoke Hub Delta Android
 local Rayfield = loadstring(game:HttpGet("https://sirius.menu/rayfield", true))()
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
@@ -6,13 +6,17 @@ local player = Players.LocalPlayer
 
 local dataRemoteEvent = ReplicatedStorage:WaitForChild("BridgeNet2"):WaitForChild("dataRemoteEvent")
 
--- Variabili globali
 local castleCFrame = CFrame.new(432.6329, 4384.6372, -1898.6741)
 local desertCFrame = CFrame.new(463.8988, 4383.7646, -1888.2440)
+
 local standCastleEnabled, standDesertEnabled = false, false
 local autoRestartCastle, autoRestartDesert = false, false
-local autoClickEnabled = false
-local autoExecEnabled = false
+local autoClickEnabled, autoExecEnabled = false, false
+
+-- Controlla se Auto Exec era attivo
+if player:GetAttribute("AutoExecEnabled") == true then
+    autoClickEnabled = true
+end
 
 -- Window
 local Window = Rayfield:CreateWindow({
@@ -54,18 +58,10 @@ local function restartCastle()
 end
 
 CastleTab:CreateButton({ Name = "Start Infinite Castle (Manual)", Callback = startCastle })
-CastleTab:CreateToggle({
-    Name = "Stand in the Middle (InfCastle)",
-    CurrentValue = false,
-    Flag = "StandCastleFlag",
-    Callback = function(Value) standCastleEnabled = Value if Value then safeStandAt(castleCFrame) end end
-})
-CastleTab:CreateToggle({
-    Name = "Auto-Restart",
-    CurrentValue = false,
-    Flag = "AutoRestartCastleFlag",
-    Callback = function(Value) autoRestartCastle = Value end
-})
+CastleTab:CreateToggle({ Name = "Stand in the Middle (InfCastle)", CurrentValue = false, Flag = "StandCastleFlag",
+    Callback = function(Value) standCastleEnabled = Value if Value then safeStandAt(castleCFrame) end end })
+CastleTab:CreateToggle({ Name = "Auto-Restart", CurrentValue = false, Flag = "AutoRestartCastleFlag",
+    Callback = function(Value) autoRestartCastle = Value end })
 
 -- Desert
 local function startDesert()
@@ -83,41 +79,25 @@ local function restartDesert()
 end
 
 DesertTab:CreateButton({ Name = "Start Infinite Desert (Manual)", Callback = startDesert })
-DesertTab:CreateToggle({
-    Name = "Stand in the Middle (InfDesert)",
-    CurrentValue = false,
-    Flag = "StandDesertFlag",
-    Callback = function(Value) standDesertEnabled = Value if Value then safeStandAt(desertCFrame) end end
-})
-DesertTab:CreateToggle({
-    Name = "Auto-Restart",
-    CurrentValue = false,
-    Flag = "AutoRestartDesertFlag",
-    Callback = function(Value) autoRestartDesert = Value end
-})
+DesertTab:CreateToggle({ Name = "Stand in the Middle (InfDesert)", CurrentValue = false, Flag = "StandDesertFlag",
+    Callback = function(Value) standDesertEnabled = Value if Value then safeStandAt(desertCFrame) end end })
+DesertTab:CreateToggle({ Name = "Auto-Restart", CurrentValue = false, Flag = "AutoRestartDesertFlag",
+    Callback = function(Value) autoRestartDesert = Value end })
 
 -- Misc tab
-MiscTab:CreateToggle({
-    Name = "Auto Click",
-    CurrentValue = false,
-    Flag = "AutoClickMisc",
-    Callback = function(Value) autoClickEnabled = Value end
-})
-MiscTab:CreateToggle({
-    Name = "Auto Exec",
-    CurrentValue = false,
-    Flag = "AutoExecMisc",
-    Callback = function(Value)
+MiscTab:CreateToggle({ Name = "Auto Click", CurrentValue = autoClickEnabled, Flag = "AutoClickMisc",
+    Callback = function(Value) autoClickEnabled = Value end })
+MiscTab:CreateToggle({ Name = "Auto Exec", CurrentValue = player:GetAttribute("AutoExecEnabled") == true,
+    Flag = "AutoExecMisc", Callback = function(Value)
         autoExecEnabled = Value
         if Value then
-            writefile("xnxsmoke_autoexec.lua", [[loadstring(game:HttpGet("https://raw.githubusercontent.com/TUO-GITHUB/tuo-hub.lua", true))()]])
+            pcall(function() player:SetAttribute("AutoExecEnabled", true) end)
         else
-            if isfile("xnxsmoke_autoexec.lua") then delfile("xnxsmoke_autoexec.lua") end
+            pcall(function() player:SetAttribute("AutoExecEnabled", false) end)
         end
-    end
-})
+    end })
 
--- Teleport after respawn
+-- Teleport on respawn
 player.CharacterAdded:Connect(function()
     task.wait(1)
     if standCastleEnabled then safeStandAt(castleCFrame) end
@@ -130,11 +110,9 @@ dataRemoteEvent.OnClientEvent:Connect(function(...)
     local function recursiveCheck(tbl)
         if type(tbl) ~= "table" then return end
         for k, v in pairs(tbl) do
-            if type(v) == "table" then
-                recursiveCheck(v)
+            if type(v) == "table" then recursiveCheck(v)
             elseif k == "Message" and type(v) == "string" then
-                local msg = v:upper()
-                if msg:find("PORTAL DESTROYED") then
+                if v:upper():find("PORTAL DESTROYED") then
                     if autoRestartCastle then task.spawn(restartCastle) end
                     if autoRestartDesert then task.spawn(restartDesert) end
                 end
@@ -156,7 +134,7 @@ spawn(function()
             pcall(function()
                 WeaponsModule.Click({KeyCode = Enum.KeyCode.ButtonX}, false, nil, true)
             end)
-            task.wait(0.1) -- fisso a 0.1 per sicurezza
+            task.wait(0.1)
         else
             task.wait(0.2)
         end
