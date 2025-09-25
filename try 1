@@ -26,6 +26,7 @@ local standDesertEnabled = false
 local autoRestartCastle = false
 local autoRestartDesert = false
 local autoClickEnabled = false
+local autoClickDelay = 0.01 -- delay iniziale tra i click
 
 -- ---------- Helpers ----------
 local function safeStandAt(cf)
@@ -40,7 +41,6 @@ local function fireSafe(args)
 end
 
 -- ---------- Auto Click ----------
--- Aspetta che il giocatore sia completamente caricato
 spawn(function()
 	repeat
 		task.wait(0.1)
@@ -51,7 +51,7 @@ spawn(function()
 			pcall(function()
 				WeaponsModule.Click({KeyCode = Enum.KeyCode.ButtonX}, false, nil, true)
 			end)
-			task.wait(0.01) -- delay minimo tra i click
+			task.wait(autoClickDelay)
 		else
 			task.wait(0.1)
 		end
@@ -100,8 +100,19 @@ local castleAutoClickToggle = CastleTab:CreateToggle({
 		autoClickEnabled = Value
 	end
 })
--- Imposta stato salvato da Rayfield
 autoClickEnabled = castleAutoClickToggle.CurrentValue
+-- Slider delay
+CastleTab:CreateSlider({
+	Name = "Auto Click Delay",
+	Range = {0.01, 0.5},
+	Increment = 0.01,
+	Suffix = "s",
+	CurrentValue = autoClickDelay,
+	Flag = "AutoClickDelayCastle",
+	Callback = function(Value)
+		autoClickDelay = Value
+	end
+})
 
 -- ---------- InfDesert ----------
 local function startDesert()
@@ -145,8 +156,19 @@ local desertAutoClickToggle = DesertTab:CreateToggle({
 		autoClickEnabled = Value
 	end
 })
--- Imposta stato salvato da Rayfield
 autoClickEnabled = desertAutoClickToggle.CurrentValue
+-- Slider delay
+DesertTab:CreateSlider({
+	Name = "Auto Click Delay",
+	Range = {0.01, 0.5},
+	Increment = 0.01,
+	Suffix = "s",
+	CurrentValue = autoClickDelay,
+	Flag = "AutoClickDelayDesert",
+	Callback = function(Value)
+		autoClickDelay = Value
+	end
+})
 
 -- ---------- Teleport on respawn ----------
 player.CharacterAdded:Connect(function()
