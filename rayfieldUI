@@ -128,19 +128,6 @@ DesertTab:CreateToggle({
 })
 
 -- Misc
-local function doPunch()
-    local args = {
-        {
-            {
-                Event = "PunchAttack",
-                Enemy = "72ab969bcaf54f159698d5e9f7fe31db"
-            },
-            "\004"
-        }
-    }
-    dataRemoteEvent:FireServer(unpack(args))
-end
-
 MiscTab:CreateToggle({
     Name = "Auto Click",
     CurrentValue = false,
@@ -149,23 +136,15 @@ MiscTab:CreateToggle({
         autoClickEnabled = Value
         if Value then
             task.spawn(function()
+                -- Vecchio metodo che dava errori nella console ma funziona in parte
+                local WeaponsModule = require(game:GetService("ReplicatedStorage").SharedModules.WeaponsModule)
                 while autoClickEnabled do
                     task.wait(0.1)
-                    doPunch()
+                    pcall(function()
+                        WeaponsModule.Click({KeyCode = Enum.KeyCode.ButtonX}, false, nil, true)
+                    end)
                 end
             end)
-        end
-    end
-})
-
-MiscTab:CreateToggle({
-    Name = "Hide UI",
-    CurrentValue = false,
-    Flag = "HideUIFlag",
-    Callback = function(Value)
-        local gui = game:GetService("CoreGui"):FindFirstChild("Rayfield")
-        if gui then
-            gui.Enabled = not Value
         end
     end
 })
