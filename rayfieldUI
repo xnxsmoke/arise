@@ -12,15 +12,18 @@ local Window = Rayfield:CreateWindow({Name="xnxsmoke Hub", LoadingTitle="Loader"
 local CastleTab = Window:CreateTab("InfCastle", 4483362458)
 local DesertTab = Window:CreateTab("InfDesert", 4483362458)
 local MiscTab = Window:CreateTab("Misc", 4483362458)
+
 local function safeStandAt(cf)
     local char = player.Character
     if char and char:FindFirstChild("HumanoidRootPart") then
         pcall(function() char.HumanoidRootPart.CFrame = cf end)
     end
 end
+
 local function fireSafe(args)
     pcall(function() dataRemoteEvent:FireServer(unpack(args)) end)
 end
+
 local function startCastle()
     fireSafe({{{Event="InfiniteCastleAction", Action="Create"}, "\r"}})
     task.wait(1)
@@ -28,14 +31,50 @@ local function startCastle()
     task.wait(1)
     if standCastleEnabled then safeStandAt(castleCFrame) end
 end
+
 local function restartCastle()
     fireSafe({{{Event="InfiniteCastleAction", Action="Leave"}, "\r"}})
     task.wait(1.5)
     startCastle()
 end
+
 CastleTab:CreateButton({Name="Start Infinite Castle (Manual)", Callback=startCastle})
 CastleTab:CreateToggle({Name="Stand in the Middle (InfCastle)", CurrentValue=false, Flag="StandCastleFlag", Callback=function(Value) standCastleEnabled=Value if Value then safeStandAt(castleCFrame) end end})
 CastleTab:CreateToggle({Name="Auto-Restart", CurrentValue=false, Flag="AutoRestartCastleFlag", Callback=function(Value) autoRestartCastle=Value end})
+
+local function sendCastleSpeed(speed)
+    local args = {
+        {
+            {
+                Speed = speed,
+                Event = "InfiniteCastleAction",
+                Action = "SpeedUp"
+            },
+            "\r"
+        }
+    }
+    fireSafe(args)
+end
+
+CastleTab:CreateDropdown({
+    Name = "Wave Speed",
+    Options = {"Default (1x)", "2x", "3x"},
+    CurrentOption = "Default (1x)",
+    Flag = "CastleSpeedDropdown",
+    Callback = function(option)
+        local speed = 1
+        if option == "2x" then
+            speed = 2
+        elseif option == "3x" then
+            speed = 3
+        end
+        task.spawn(function()
+            task.wait(5)
+            sendCastleSpeed(speed)
+        end)
+    end
+})
+
 local function startDesert()
     fireSafe({{{Event="InfiniteModeAction", Action="Create"}, "\r"}})
     task.wait(1)
@@ -43,20 +82,25 @@ local function startDesert()
     task.wait(1)
     if standDesertEnabled then safeStandAt(desertCFrame) end
 end
+
 local function restartDesert()
     fireSafe({{{Event="InfiniteModeAction", Action="Leave"}, "\r"}})
     task.wait(1.5)
     startDesert()
 end
+
 DesertTab:CreateButton({Name="Start Infinite Desert (Manual)", Callback=startDesert})
 DesertTab:CreateToggle({Name="Stand in the Middle (InfDesert)", CurrentValue=false, Flag="StandDesertFlag", Callback=function(Value) standDesertEnabled=Value if Value then safeStandAt(desertCFrame) end end})
 DesertTab:CreateToggle({Name="Auto-Restart", CurrentValue=false, Flag="AutoRestartDesertFlag", Callback=function(Value) autoRestartDesert=Value end})
+
 MiscTab:CreateToggle({Name="Auto Click", CurrentValue=false, Flag="AutoClickMisc", Callback=function(Value) autoClickEnabled=Value end})
+
 player.CharacterAdded:Connect(function()
     task.wait(1)
     if standCastleEnabled then safeStandAt(castleCFrame) end
     if standDesertEnabled then safeStandAt(desertCFrame) end
 end)
+
 dataRemoteEvent.OnClientEvent:Connect(function(...)
     local args={...}
     local function recursiveCheck(tbl)
@@ -73,6 +117,7 @@ dataRemoteEvent.OnClientEvent:Connect(function(...)
     end
     for _,v in ipairs(args) do recursiveCheck(v) end
 end)
+
 spawn(function()
     repeat task.wait(0.1) until player:GetAttribute("Loaded")==true
     local WeaponsModule
@@ -86,4 +131,5 @@ spawn(function()
         end
     end
 end)
+
 Rayfield:LoadConfiguration("InfiniteModesHub")
