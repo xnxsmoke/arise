@@ -149,9 +149,9 @@ DesertTab:CreateToggle({
     Callback = function(Value) autoRestartDesert = Value end
 })
 
--- Wave Speed 2 Desert
+-- Wave Speed 2 (InfDesert)
 DesertTab:CreateToggle({
-    Name = "Wave Speed 2 (InfDesert)",
+    Name = "Wave Speed 2",
     CurrentValue = false,
     Flag = "WaveSpeed2DesertFlag",
     Callback = function(Value)
@@ -182,9 +182,9 @@ DesertTab:CreateToggle({
     end
 })
 
--- Wave Speed 3 Desert
+-- Wave Speed 3 (InfDesert)
 DesertTab:CreateToggle({
-    Name = "Wave Speed 3 (InfDesert)",
+    Name = "Wave Speed 3",
     CurrentValue = false,
     Flag = "WaveSpeed3DesertFlag",
     Callback = function(Value)
