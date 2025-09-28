@@ -1,247 +1,294 @@
--- Hub RayfieldUI completo aggiornato
-
 local Rayfield = loadstring(game:HttpGet("https://sirius.menu/rayfield"))()
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+local dataRemoteEvent = ReplicatedStorage:WaitForChild("BridgeNet2"):WaitForChild("dataRemoteEvent")
+
+local castleCFrame = CFrame.new(432.6329, 4384.6372, -1898.6741)
+local desertCFrame = CFrame.new(463.8988, 4383.7646, -1888.2440)
 
 local Window = Rayfield:CreateWindow({
-    Name = "Arise Hub",
-    LoadingTitle = "Arise Hub",
+    Name = "xnxsmoke Hub",
+    LoadingTitle = "xnxsmoke Loader",
     LoadingSubtitle = "by xnxsmoke",
-    ConfigurationSaving = {
-        Enabled = true,
-        FolderName = "AriseHub",
-        FileName = "Config"
-    },
-    Discord = {
-        Enabled = false,
-        Invite = "",
-        RememberJoins = true
-    },
-    KeySystem = false
+    ConfigurationSaving = { Enabled = true, FileName = "InfiniteModesHub", AutoSave = true },
 })
 
--- Tab principali
-local InfCastleTab = Window:CreateTab("InfCastle", 4483362458)
-local InfDesertTab = Window:CreateTab("InfDesert", 4483362458)
+local CastleTab = Window:CreateTab("InfCastle", 4483362458)
+local DesertTab = Window:CreateTab("InfDesert", 4483362458)
 local MiscTab = Window:CreateTab("Misc", 4483362458)
 
--- Variabili di stato
-local castleStandEnabled = false
-local castleAutoRestartEnabled = false
-local castleWaveSpeed2Enabled = false
-
-local desertStandEnabled = false
-local desertAutoRestartEnabled = false
-local desertWaveSpeed2Enabled = false
-local desertWaveSpeed3Enabled = false
-
+local standCastleEnabled = false
+local standDesertEnabled = false
+local autoRestartCastle = false
+local autoRestartDesert = false
 local autoClickEnabled = false
+local waveSpeed2DesertEnabled = false
+local waveSpeed3DesertEnabled = false
 
--- Coordinate predefinite
-local castleCFrame = CFrame.new(-291, 96, 420)
-local desertCFrame = CFrame.new(-3, 5, -190)
-
--- Funzione per teletrasporto sicuro
 local function safeStandAt(cf)
-    local plr = game.Players.LocalPlayer
-    if plr and plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
-        plr.Character:WaitForChild("HumanoidRootPart").CFrame = cf
+    local char = player.Character
+    if char and char:FindFirstChild("HumanoidRootPart") then
+        pcall(function() char.HumanoidRootPart.CFrame = cf end)
     end
 end
 
--- Funzione restart infinito
-local function autoRestart()
-    local args = {
-        {
-            [1] = {
-                [1] = "InfiniteModeAction",
-                [2] = "Restart"
-            }
-        }
-    }
-    for i = 1, 5 do
-        pcall(function()
-            game:GetService("ReplicatedStorage"):WaitForChild("BridgeNet2"):WaitForChild("dataRemoteEvent"):FireServer(unpack(args))
-        end)
-        task.wait(math.random(1, 3))
-    end
+local function fireSafe(args)
+    pcall(function() dataRemoteEvent:FireServer(unpack(args)) end)
 end
 
--- Funzione speed (castle & desert)
-local function fireSpeed(speed)
-    local args = {
-        {
-            {
-                Speed = speed,
-                Event = "InfiniteModeAction",
-                Action = "SpeedUp"
-            },
-            "\r"
-        }
-    }
-    pcall(function()
-        local bridge = game:GetService("ReplicatedStorage"):WaitForChild("BridgeNet2")
-        local dataRemote = bridge:WaitForChild("dataRemoteEvent")
-        dataRemote:FireServer(unpack(args))
+-- Funzione per auto-rejoin sicuro con ritardo casuale
+local function safeRejoin(joinFunction)
+    task.spawn(function()
+        local success = false
+        local attempts = 0
+        while not success and attempts < 5 do
+            attempts += 1
+            local delayTime = math.random(3,6)
+            print("[AutoRejoin] Tentativo #" .. attempts .. ", attendo " .. delayTime .. " secondi prima del join")
+            task.wait(delayTime)
+            local ok, err = pcall(joinFunction)
+            if ok then
+                print("[AutoRejoin] Join completato!")
+                success = true
+            else
+                warn("[AutoRejoin] Errore nel join: ".. tostring(err))
+            end
+        end
+        if not success then
+            warn("[AutoRejoin] Non sono riuscito a riconnettermi dopo 5 tentativi.")
+        end
     end)
 end
 
--- InfCastle toggles
-InfCastleTab:CreateToggle({
-    Name = "Stand Safe (Castle)",
+-- InfCastle
+local function startCastle()
+    fireSafe({ { { Event = "InfiniteCastleAction", Action = "Create" }, "\r" } })
+    task.wait(1)
+    fireSafe({ { { Dungeon = 3604563306, Event = "InfiniteCastleAction", Action = "Start" }, "\r" } })
+    task.wait(1)
+    if standCastleEnabled then
+        safeStandAt(castleCFrame)
+    end
+end
+
+local function restartCastle()
+    safeRejoin(startCastle)
+end
+
+CastleTab:CreateButton({ Name = "Start Infinite Castle (Manual)", Callback = startCastle })
+CastleTab:CreateToggle({
+    Name = "Stand in the Middle (InfCastle)",
     CurrentValue = false,
-    Flag = "InfCastleStand",
-    Callback = function(value)
-        castleStandEnabled = value
-        if value then safeStandAt(castleCFrame) end
+    Flag = "StandCastleFlag",
+    Callback = function(Value)
+        standCastleEnabled = Value
+        if Value then safeStandAt(castleCFrame) end
     end
 })
-
-InfCastleTab:CreateToggle({
-    Name = "Auto Restart",
+CastleTab:CreateToggle({
+    Name = "Auto-Restart (on Portal Destroyed)",
     CurrentValue = false,
-    Flag = "InfCastleAutoRestart",
-    Callback = function(value)
-        castleAutoRestartEnabled = value
-    end
+    Flag = "AutoRestartCastleFlag",
+    Callback = function(Value) autoRestartCastle = Value end
 })
-
-InfCastleTab:CreateToggle({
+CastleTab:CreateToggle({
     Name = "Wave Speed 2",
     CurrentValue = false,
-    Flag = "InfCastleWaveSpeed2",
-    Callback = function(value)
-        castleWaveSpeed2Enabled = value
-        if value then
-            local plr = game.Players.LocalPlayer
-            if plr and plr.Character then
-                task.spawn(function()
-                    task.wait(5)
-                    if castleWaveSpeed2Enabled then pcall(fireSpeed, 2) end
-                end)
-            end
+    Flag = "WaveSpeed2Flag",
+    Callback = function(Value)
+        if Value then
+            task.spawn(function()
+                repeat task.wait(0.1) until player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+                task.wait(5)
+                local args = {
+                    {
+                        {
+                            Speed = 2,
+                            Event = "InfiniteCastleAction",
+                            Action = "SpeedUp"
+                        },
+                        "\r"
+                    }
+                }
+                fireSafe(args)
+            end)
         end
     end
 })
 
--- InfDesert toggles
-InfDesertTab:CreateToggle({
-    Name = "Stand Safe (Desert)",
+-- InfDesert
+local function startDesert()
+    fireSafe({ { { Event = "InfiniteModeAction", Action = "Create" }, "\r" } })
+    task.wait(1)
+    fireSafe({ { { Dungeon = 3604563306, Event = "InfiniteModeAction", Action = "Start" }, "\r" } })
+    task.wait(1)
+    if standDesertEnabled then
+        safeStandAt(desertCFrame)
+    end
+end
+
+local function restartDesert()
+    safeRejoin(startDesert)
+end
+
+DesertTab:CreateButton({ Name = "Start Infinite Desert (Manual)", Callback = startDesert })
+DesertTab:CreateToggle({
+    Name = "Stand in the Middle (InfDesert)",
     CurrentValue = false,
-    Flag = "InfDesertStand",
-    Callback = function(value)
-        desertStandEnabled = value
-        if value then safeStandAt(desertCFrame) end
+    Flag = "StandDesertFlag",
+    Callback = function(Value)
+        standDesertEnabled = Value
+        if Value then safeStandAt(desertCFrame) end
     end
 })
-
-InfDesertTab:CreateToggle({
-    Name = "Auto Restart",
+DesertTab:CreateToggle({
+    Name = "Auto-Restart (on Portal Destroyed)",
     CurrentValue = false,
-    Flag = "InfDesertAutoRestart",
-    Callback = function(value)
-        desertAutoRestartEnabled = value
-    end
+    Flag = "AutoRestartDesertFlag",
+    Callback = function(Value) autoRestartDesert = Value end
 })
 
--- Wave Speed 2 (mutuo con 3)
-InfDesertTab:CreateToggle({
-    Name = "Wave Speed 2",
+-- Wave Speed 2 Desert
+DesertTab:CreateToggle({
+    Name = "Wave Speed 2 (InfDesert)",
     CurrentValue = false,
-    Flag = "InfDesertWaveSpeed2",
-    Callback = function(value)
-        if value then
-            if desertWaveSpeed3Enabled then
-                desertWaveSpeed3Enabled = false
-                Rayfield.Flags["InfDesertWaveSpeed3"].Set(false)
+    Flag = "WaveSpeed2DesertFlag",
+    Callback = function(Value)
+        if Value then
+            if waveSpeed3DesertEnabled then
+                waveSpeed3DesertEnabled = false
+                Rayfield.Flags["WaveSpeed3DesertFlag"].Set(false)
             end
-            desertWaveSpeed2Enabled = true
-            local plr = game.Players.LocalPlayer
-            if plr and plr.Character then
-                task.spawn(function()
-                    task.wait(5)
-                    if desertWaveSpeed2Enabled then pcall(fireSpeed, 2) end
-                end)
-            end
+            waveSpeed2DesertEnabled = true
+            task.spawn(function()
+                repeat task.wait(0.1) until player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+                task.wait(5)
+                local args = {
+                    {
+                        {
+                            Speed = 2,
+                            Event = "InfiniteModeAction",
+                            Action = "SpeedUp"
+                        },
+                        "\r"
+                    }
+                }
+                fireSafe(args)
+            end)
         else
-            desertWaveSpeed2Enabled = false
+            waveSpeed2DesertEnabled = false
         end
     end
 })
 
--- Wave Speed 3 (mutuo con 2)
-InfDesertTab:CreateToggle({
-    Name = "Wave Speed 3",
+-- Wave Speed 3 Desert
+DesertTab:CreateToggle({
+    Name = "Wave Speed 3 (InfDesert)",
     CurrentValue = false,
-    Flag = "InfDesertWaveSpeed3",
-    Callback = function(value)
-        if value then
-            if desertWaveSpeed2Enabled then
-                desertWaveSpeed2Enabled = false
-                Rayfield.Flags["InfDesertWaveSpeed2"].Set(false)
+    Flag = "WaveSpeed3DesertFlag",
+    Callback = function(Value)
+        if Value then
+            if waveSpeed2DesertEnabled then
+                waveSpeed2DesertEnabled = false
+                Rayfield.Flags["WaveSpeed2DesertFlag"].Set(false)
             end
-            desertWaveSpeed3Enabled = true
-            local plr = game.Players.LocalPlayer
-            if plr and plr.Character then
-                task.spawn(function()
-                    task.wait(5)
-                    if desertWaveSpeed3Enabled then pcall(fireSpeed, 3) end
-                end)
-            end
+            waveSpeed3DesertEnabled = true
+            task.spawn(function()
+                repeat task.wait(0.1) until player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+                task.wait(5)
+                local args = {
+                    {
+                        {
+                            Speed = 3,
+                            Event = "InfiniteModeAction",
+                            Action = "SpeedUp"
+                        },
+                        "\r"
+                    }
+                }
+                fireSafe(args)
+            end)
         else
-            desertWaveSpeed3Enabled = false
+            waveSpeed3DesertEnabled = false
         end
     end
 })
 
--- Misc tab (AutoClick)
+-- Misc
 MiscTab:CreateToggle({
     Name = "Auto Click",
     CurrentValue = false,
-    Flag = "MiscAutoClick",
-    Callback = function(value)
-        autoClickEnabled = value
-        task.spawn(function()
-            while autoClickEnabled do
-                game:GetService("VirtualUser"):Button1Down(Vector2.new(0,0))
-                game:GetService("VirtualUser"):Button1Up(Vector2.new(0,0))
-                task.wait(0.1)
-            end
-        end)
+    Flag = "AutoClickFlag",
+    Callback = function(Value)
+        autoClickEnabled = Value
+        if Value then
+            task.spawn(function()
+                local WeaponsModule = require(game:GetService("ReplicatedStorage").SharedModules.WeaponsModule)
+                while autoClickEnabled do
+                    task.wait(0.1)
+                    pcall(function()
+                        WeaponsModule.Click({KeyCode = Enum.KeyCode.ButtonX}, false, nil, true)
+                    end)
+                end
+            end)
+        end
     end
 })
 
--- Eventi OnClientEvent per AutoRestart
-local function deepSearch(tbl, target)
-    for _, v in pairs(tbl) do
-        if type(v) == "table" then
-            if deepSearch(v, target) then return true end
-        elseif type(v) == "string" and string.find(v, target) then
-            return true
-        end
+-- Teleport on respawn
+player.CharacterAdded:Connect(function()
+    task.wait(1)
+    if standCastleEnabled then safeStandAt(castleCFrame) end
+    if standDesertEnabled then safeStandAt(desertCFrame) end
+    if waveSpeed2DesertEnabled then
+        task.wait(5)
+        local args = {
+            {
+                {
+                    Speed = 2,
+                    Event = "InfiniteModeAction",
+                    Action = "SpeedUp"
+                },
+                "\r"
+            }
+        }
+        fireSafe(args)
     end
-    return false
-end
-
-game:GetService("ReplicatedStorage"):WaitForChild("BridgeNet2"):WaitForChild("dataRemoteEvent").OnClientEvent:Connect(function(...)
-    local args = {...}
-    if deepSearch(args, "PORTAL DESTROYED") then
-        if castleAutoRestartEnabled or desertAutoRestartEnabled then
-            autoRestart()
-        end
+    if waveSpeed3DesertEnabled then
+        task.wait(5)
+        local args = {
+            {
+                {
+                    Speed = 3,
+                    Event = "InfiniteModeAction",
+                    Action = "SpeedUp"
+                },
+                "\r"
+            }
+        }
+        fireSafe(args)
     end
 end)
 
--- CharacterAdded handler per riposizionamenti e wave speed
-local player = game.Players.LocalPlayer
-if player then
-    player.CharacterAdded:Connect(function(char)
-        task.spawn(function()
-            task.wait(5)
-            if castleStandEnabled then safeStandAt(castleCFrame) end
-            if desertStandEnabled then safeStandAt(desertCFrame) end
-            if castleWaveSpeed2Enabled then pcall(fireSpeed, 2) end
-            if desertWaveSpeed2Enabled then pcall(fireSpeed, 2) end
-            if desertWaveSpeed3Enabled then pcall(fireSpeed, 3) end
-        end)
-    end)
-end
+-- Auto-Restart on Portal Destroy
+dataRemoteEvent.OnClientEvent:Connect(function(...)
+    local args = {...}
+    local function recursiveCheck(tbl)
+        if type(tbl) ~= "table" then return end
+        for k, v in pairs(tbl) do
+            if type(v) == "table" then
+                recursiveCheck(v)
+            elseif k == "Message" and type(v) == "string" then
+                local msg = v:upper()
+                if msg:find("PORTAL DESTROYED") then
+                    if autoRestartCastle then restartCastle() end
+                    if autoRestartDesert then restartDesert() end
+                end
+            end
+        end
+    end
+    for _, v in ipairs(args) do recursiveCheck(v) end
+end)
+
+Rayfield:LoadConfiguration("InfiniteModesHub")
