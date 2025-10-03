@@ -93,7 +93,7 @@ CastleTab:CreateToggle({
     Callback = function(Value) autoRestartCastle = Value end
 })
 CastleTab:CreateToggle({
-    Name = "Wave Speed 2",
+    Name = "Wave Speed 3",
     CurrentValue = false,
     Flag = "WaveSpeed3Flag",
     Callback = function(Value)
