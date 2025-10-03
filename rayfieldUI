@@ -25,6 +25,8 @@ local autoRestartDesert = false
 local autoClickEnabled = false
 local waveSpeed2DesertEnabled = false
 local waveSpeed3DesertEnabled = false
+local waveSpeed2CastleEnabled = false
+local waveSpeed3CastleEnabled = false
 
 local function safeStandAt(cf)
     local char = player.Character
@@ -92,12 +94,19 @@ CastleTab:CreateToggle({
     Flag = "AutoRestartCastleFlag",
     Callback = function(Value) autoRestartCastle = Value end
 })
+
+-- Wave Speed 2 (InfCastle)
 CastleTab:CreateToggle({
     Name = "Wave Speed 2",
     CurrentValue = false,
-    Flag = "WaveSpeed2Flag",
+    Flag = "WaveSpeed2CastleFlag",
     Callback = function(Value)
         if Value then
+            if waveSpeed3CastleEnabled then
+                waveSpeed3CastleEnabled = false
+                Rayfield.Flags["WaveSpeed3CastleFlag"].Set(false)
+            end
+            waveSpeed2CastleEnabled = true
             task.spawn(function()
                 repeat task.wait(0.1) until player.Character and player.Character:FindFirstChild("HumanoidRootPart")
                 task.wait(5)
@@ -113,6 +122,41 @@ CastleTab:CreateToggle({
                 }
                 fireSafe(args)
             end)
+        else
+            waveSpeed2CastleEnabled = false
+        end
+    end
+})
+
+-- Wave Speed 3 (InfCastle)
+CastleTab:CreateToggle({
+    Name = "Wave Speed 3",
+    CurrentValue = false,
+    Flag = "WaveSpeed3CastleFlag",
+    Callback = function(Value)
+        if Value then
+            if waveSpeed2CastleEnabled then
+                waveSpeed2CastleEnabled = false
+                Rayfield.Flags["WaveSpeed2CastleFlag"].Set(false)
+            end
+            waveSpeed3CastleEnabled = true
+            task.spawn(function()
+                repeat task.wait(0.1) until player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+                task.wait(5)
+                local args = {
+                    {
+                        {
+                            Speed = 3,
+                            Event = "InfiniteCastleAction",
+                            Action = "SpeedUp"
+                        },
+                        "\r"
+                    }
+                }
+                fireSafe(args)
+            end)
+        else
+            waveSpeed3CastleEnabled = false
         end
     end
 })
@@ -236,38 +280,26 @@ MiscTab:CreateToggle({
     end
 })
 
--- Teleport on respawn
+-- Teleport on respawn + wave speed restore
 player.CharacterAdded:Connect(function()
     task.wait(1)
     if standCastleEnabled then safeStandAt(castleCFrame) end
     if standDesertEnabled then safeStandAt(desertCFrame) end
     if waveSpeed2DesertEnabled then
         task.wait(5)
-        local args = {
-            {
-                {
-                    Speed = 2,
-                    Event = "InfiniteModeAction",
-                    Action = "SpeedUp"
-                },
-                "\r"
-            }
-        }
-        fireSafe(args)
+        fireSafe({ { { Speed = 2, Event = "InfiniteModeAction", Action = "SpeedUp" }, "\r" } })
     end
     if waveSpeed3DesertEnabled then
         task.wait(5)
-        local args = {
-            {
-                {
-                    Speed = 3,
-                    Event = "InfiniteModeAction",
-                    Action = "SpeedUp"
-                },
-                "\r"
-            }
-        }
-        fireSafe(args)
+        fireSafe({ { { Speed = 3, Event = "InfiniteModeAction", Action = "SpeedUp" }, "\r" } })
+    end
+    if waveSpeed2CastleEnabled then
+        task.wait(5)
+        fireSafe({ { { Speed = 2, Event = "InfiniteCastleAction", Action = "SpeedUp" }, "\r" } })
+    end
+    if waveSpeed3CastleEnabled then
+        task.wait(5)
+        fireSafe({ { { Speed = 3, Event = "InfiniteCastleAction", Action = "SpeedUp" }, "\r" } })
     end
 end)
 
