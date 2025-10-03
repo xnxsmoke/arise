@@ -85,6 +85,7 @@ CastleTab:CreateToggle({
     Flag = "StandCastleFlag",
     Callback = function(Value)
         standCastleEnabled = Value
+        if Value then safeStandAt(castleCFrame) end
     end
 })
 CastleTab:CreateToggle({
@@ -182,6 +183,7 @@ DesertTab:CreateToggle({
     Flag = "StandDesertFlag",
     Callback = function(Value)
         standDesertEnabled = Value
+        if Value then safeStandAt(desertCFrame) end
     end
 })
 DesertTab:CreateToggle({
@@ -278,9 +280,11 @@ MiscTab:CreateToggle({
     end
 })
 
--- Respawn (solo wave speed restore, niente più stand middle)
+-- Teleport on respawn + wave speed restore
 player.CharacterAdded:Connect(function()
     task.wait(1)
+    if standCastleEnabled then safeStandAt(castleCFrame) end
+    if standDesertEnabled then safeStandAt(desertCFrame) end
     if waveSpeed2DesertEnabled then
         task.wait(5)
         fireSafe({ { { Speed = 2, Event = "InfiniteModeAction", Action = "SpeedUp" }, "\r" } })
