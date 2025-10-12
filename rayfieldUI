@@ -236,6 +236,38 @@ MiscTab:CreateToggle({
     end
 })
 
+local arlecchinoKeyEnabled = false
+
+MiscTab:CreateToggle({
+    Name = "Arlecchino Key",
+    CurrentValue = false,
+    Flag = "ArlecchinoKeyFlag",
+    Callback = function(Value)
+        arlecchinoKeyEnabled = Value
+        if Value then
+            task.spawn(function()
+                local dataEvent = game:GetService("ReplicatedStorage"):WaitForChild("BridgeNet2"):WaitForChild("dataRemoteEvent")
+                while arlecchinoKeyEnabled do
+                    local args = {
+                        {
+                            {
+                                Event = "CraftItem",
+                                Name = "HLKeyBeru"
+                            },
+                            "\r"
+                        }
+                    }
+                    pcall(function()
+                        dataEvent:FireServer(unpack(args))
+                    end)
+                    task.wait(3) -- ⏱️ Attesa di 1 secondo tra ogni craft (puoi ridurla o aumentarla)
+                end
+            end)
+        end
+    end
+})
+
+
 -- Teleport on respawn
 player.CharacterAdded:Connect(function()
     task.wait(1)
