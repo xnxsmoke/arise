@@ -24,18 +24,22 @@ local MiscTab = Window:CreateTab("Misc", 4483362458)
 -- =================== Variabili ===================
 local standCastleEnabled = false
 local standDesertEnabled = false
+local standBossRushEnabled = false
+
 local autoRestartCastle = false
 local autoRestartDesert = false
+local autoRestartLabyrinth = false
+local autoRestartBossRush = false
+
 local autoClickEnabled = false
+local arlecchinoKeyEnabled = false
+
 local waveSpeed2DesertEnabled = false
 local waveSpeed3DesertEnabled = false
 
-local autoRestartLabyrinth = false
 local speed1LabyrinthEnabled = false
 local speed2LabyrinthEnabled = false
 local speed3LabyrinthEnabled = false
-
-local autoRestartBossRush = false
 
 -- =================== Funzioni Utility ===================
 local function safeStandAt(cf)
@@ -123,8 +127,6 @@ local function startDesert()
     fireSafe({ { { Event = "InfiniteModeAction", Action = "Create" }, "\014" } })
     task.wait(1)
     fireSafe({ { { Dungeon = 3604563306, Event = "InfiniteModeAction", Action = "Start" }, "\014" } })
-    task.wait(1)
-    if standDesertEnabled then safeStandAt(desertCFrame) end
 end
 
 local function restartDesert()
@@ -260,7 +262,9 @@ local function startBossRush()
     fireSafe({ { { Event = "BossRushAction", Action = "Create" }, "\015" } })
     task.wait(1)
     fireSafe({ { { Dungeon = 3604563306, Event = "BossRushAction", Action = "Start", Diff = "Easy" }, "\015" } })
-    safeStandAt(bossRushCFrame)
+    if standBossRushEnabled then
+        safeStandAt(bossRushCFrame)
+    end
 end
 
 local function restartBossRush()
@@ -273,6 +277,18 @@ BossRushTab:CreateButton({
 })
 
 BossRushTab:CreateToggle({
+    Name = "Stand in the Middle (BossRush)",
+    CurrentValue = false,
+    Flag = "StandBossRushFlag",
+    Callback = function(Value)
+        standBossRushEnabled = Value
+        if Value then
+            safeStandAt(bossRushCFrame)
+        end
+    end
+})
+
+BossRushTab:CreateToggle({
     Name = "Auto-Restart (on Rush Ended)",
     CurrentValue = false,
     Flag = "AutoRestartBossRushFlag",
@@ -282,9 +298,6 @@ BossRushTab:CreateToggle({
 })
 
 -- =================== Misc ===================
-local autoClickEnabled = false
-local arlecchinoKeyEnabled = false
-
 MiscTab:CreateToggle({
     Name = "Auto Click",
     CurrentValue = false,
@@ -313,7 +326,6 @@ MiscTab:CreateToggle({
         arlecchinoKeyEnabled = Value
         if Value then
             task.spawn(function()
-                local dataEvent = game:GetService("ReplicatedStorage"):WaitForChild("BridgeNet2"):WaitForChild("dataRemoteEvent")
                 while arlecchinoKeyEnabled do
                     local args = {
                         {
@@ -325,7 +337,7 @@ MiscTab:CreateToggle({
                         }
                     }
                     pcall(function()
-                        dataEvent:FireServer(unpack(args))
+                        dataRemoteEvent:FireServer(unpack(args))
                     end)
                     task.wait(3)
                 end
@@ -339,6 +351,7 @@ player.CharacterAdded:Connect(function()
     task.wait(1)
     if standCastleEnabled then safeStandAt(castleCFrame) end
     if standDesertEnabled then safeStandAt(desertCFrame) end
+    if standBossRushEnabled then safeStandAt(bossRushCFrame) end
 end)
 
 -- =================== Auto-Restart Portal/Boss ===================
