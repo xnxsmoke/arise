@@ -6,7 +6,7 @@ local dataRemoteEvent = ReplicatedStorage:WaitForChild("BridgeNet2"):WaitForChil
 
 local castleCFrame = CFrame.new(432.6329, 4384.6372, -1898.6741)
 local desertCFrame = CFrame.new(463.8988, 4383.7646, -1888.2440)
-local bossRushCFrame = CFrame.new(216.035507, 1594.49414, -4315.56738, 0.861163139, -4.20389539e-45, -0.508328736, 1.12103877e-44, 1, 1.12103877e-44, 0.508328736, -1.54142831e-44, 0.861163139)
+local bossRushCFrame = CFrame.new(216.035507, 1594.49414, -4315.56738)
 
 local Window = Rayfield:CreateWindow({
     Name = "xnxsmoke Hub",
@@ -18,15 +18,26 @@ local Window = Rayfield:CreateWindow({
 local CastleTab = Window:CreateTab("InfCastle", 4483362458)
 local DesertTab = Window:CreateTab("InfDesert", 4483362458)
 local LabTab = Window:CreateTab("InfLab", 4483362458)
-local BossRushTab = Window:CreateTab("Boss Rush", 4483362458)
+local BossRushTab = Window:CreateTab("BossRush", 4483362458)
 local MiscTab = Window:CreateTab("Misc", 4483362458)
 
--- Variabili generali
-local standCastleEnabled, standDesertEnabled, standBossRushEnabled = false, false, false
-local autoRestartCastle, autoRestartDesert, autoRestartLabyrinth = false, false, false
-local waveSpeed2DesertEnabled, waveSpeed3DesertEnabled = false, false
+-- =================== Variabili ===================
+local standCastleEnabled = false
+local standDesertEnabled = false
+local autoRestartCastle = false
+local autoRestartDesert = false
+local autoClickEnabled = false
+local waveSpeed2DesertEnabled = false
+local waveSpeed3DesertEnabled = false
 
--- Utility
+local autoRestartLabyrinth = false
+local speed1LabyrinthEnabled = false
+local speed2LabyrinthEnabled = false
+local speed3LabyrinthEnabled = false
+
+local autoRestartBossRush = false
+
+-- =================== Funzioni Utility ===================
 local function safeStandAt(cf)
     local char = player.Character
     if char and char:FindFirstChild("HumanoidRootPart") then
@@ -41,23 +52,27 @@ end
 local function safeRejoin(joinFunction)
     task.spawn(function()
         local success = false
-        for i = 1, 5 do
-            task.wait(math.random(3, 6))
+        local attempts = 0
+        while not success and attempts < 5 do
+            attempts += 1
+            local delayTime = math.random(3,6)
+            print("[AutoRejoin] Tentativo #" .. attempts .. ", attendo " .. delayTime .. " secondi prima del join")
+            task.wait(delayTime)
             local ok, err = pcall(joinFunction)
             if ok then
+                print("[AutoRejoin] Join completato!")
                 success = true
-                break
             else
-                warn("[AutoRejoin] Errore:", err)
+                warn("[AutoRejoin] Errore nel join: ".. tostring(err))
             end
         end
         if not success then
-            warn("[AutoRejoin] Non riuscito dopo 5 tentativi.")
+            warn("[AutoRejoin] Non sono riuscito a riconnettermi dopo 5 tentativi.")
         end
     end)
 end
 
--- ========== InfCastle ==========
+-- =================== InfCastle ===================
 local function startCastle()
     fireSafe({ { { Event = "InfiniteCastleAction", Action = "Create" }, "\014" } })
     task.wait(1)
@@ -75,24 +90,25 @@ CastleTab:CreateToggle({
     Name = "Stand in the Middle (InfCastle)",
     CurrentValue = false,
     Flag = "StandCastleFlag",
-    Callback = function(v)
-        standCastleEnabled = v
-        if v then safeStandAt(castleCFrame) end
+    Callback = function(Value)
+        standCastleEnabled = Value
+        if Value then safeStandAt(castleCFrame) end
     end
 })
 CastleTab:CreateToggle({
     Name = "Auto-Restart (on Portal Destroyed)",
     CurrentValue = false,
     Flag = "AutoRestartCastleFlag",
-    Callback = function(v) autoRestartCastle = v end
+    Callback = function(Value) autoRestartCastle = Value end
 })
 CastleTab:CreateToggle({
     Name = "Wave Speed 3",
     CurrentValue = false,
-    Flag = "WaveSpeed3CastleFlag",
-    Callback = function(v)
-        if v then
+    Flag = "WaveSpeed3Flag",
+    Callback = function(Value)
+        if Value then
             task.spawn(function()
+                repeat task.wait(0.1) until player.Character and player.Character:FindFirstChild("HumanoidRootPart")
                 task.wait(5)
                 fireSafe({ { { Speed = 3, Event = "InfiniteCastleAction", Action = "SpeedUp" }, "\014" } })
             end)
@@ -100,7 +116,7 @@ CastleTab:CreateToggle({
     end
 })
 
--- ========== InfDesert ==========
+-- =================== InfDesert ===================
 local function startDesert()
     fireSafe({ { { Event = "InfiniteModeAction", Action = "Create" }, "\014" } })
     task.wait(1)
@@ -118,26 +134,35 @@ DesertTab:CreateToggle({
     Name = "Stand in the Middle (InfDesert)",
     CurrentValue = false,
     Flag = "StandDesertFlag",
-    Callback = function(v)
-        standDesertEnabled = v
-        if v then safeStandAt(desertCFrame) end
+    Callback = function(Value)
+        standDesertEnabled = Value
+        if Value then safeStandAt(desertCFrame) end
     end
 })
 DesertTab:CreateToggle({
     Name = "Auto-Restart (on Portal Destroyed)",
     CurrentValue = false,
     Flag = "AutoRestartDesertFlag",
-    Callback = function(v) autoRestartDesert = v end
+    Callback = function(Value) autoRestartDesert = Value end
 })
 DesertTab:CreateToggle({
     Name = "Wave Speed 2",
     CurrentValue = false,
     Flag = "WaveSpeed2DesertFlag",
-    Callback = function(v)
-        if v then
+    Callback = function(Value)
+        if Value then
+            if waveSpeed3DesertEnabled then
+                waveSpeed3DesertEnabled = false
+                Rayfield.Flags["WaveSpeed3DesertFlag"].Set(false)
+            end
             waveSpeed2DesertEnabled = true
-            waveSpeed3DesertEnabled = false
-            fireSafe({ { { Speed = 2, Event = "InfiniteModeAction", Action = "SpeedUp" }, "\014" } })
+            task.spawn(function()
+                repeat task.wait(0.1) until player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+                task.wait(5)
+                fireSafe({ { { Speed = 2, Event = "InfiniteModeAction", Action = "SpeedUp" }, "\014" } })
+            end)
+        else
+            waveSpeed2DesertEnabled = false
         end
     end
 })
@@ -145,57 +170,71 @@ DesertTab:CreateToggle({
     Name = "Wave Speed 3",
     CurrentValue = false,
     Flag = "WaveSpeed3DesertFlag",
-    Callback = function(v)
-        if v then
+    Callback = function(Value)
+        if Value then
+            if waveSpeed2DesertEnabled then
+                waveSpeed2DesertEnabled = false
+                Rayfield.Flags["WaveSpeed2DesertFlag"].Set(false)
+            end
             waveSpeed3DesertEnabled = true
-            waveSpeed2DesertEnabled = false
-            fireSafe({ { { Speed = 3, Event = "InfiniteModeAction", Action = "SpeedUp" }, "\014" } })
+            task.spawn(function()
+                repeat task.wait(0.1) until player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+                task.wait(5)
+                fireSafe({ { { Speed = 3, Event = "InfiniteModeAction", Action = "SpeedUp" }, "\014" } })
+            end)
+        else
+            waveSpeed3DesertEnabled = false
         end
     end
 })
 
--- ========== InfLab (non toccato, già funzionante) ==========
--- [Mantieni la tua versione attuale di InfLab qui senza modifiche]
+-- =================== InfLab ===================
+-- (lasciata così come funziona bene, non toccata)
 
--- ========== Boss Rush ==========
+-- =================== BossRush ===================
 local function startBossRush()
     fireSafe({ { { Event = "BossRushAction", Action = "Create" }, "\015" } })
     task.wait(1)
-    fireSafe({ { { Dungeon = 3604563306, Action = "Start", Diff = "Easy", Event = "BossRushAction" }, "\015" } })
-    task.wait(1)
-    if standBossRushEnabled then safeStandAt(bossRushCFrame) end
+    fireSafe({ { { Dungeon = 3604563306, Event = "BossRushAction", Action = "Start", Diff = "Easy" }, "\015" } })
+    safeStandAt(bossRushCFrame)
+end
+
+local function restartBossRush()
+    safeRejoin(startBossRush)
 end
 
 BossRushTab:CreateButton({
-    Name = "Start Boss Rush (Manual)",
+    Name = "Start BossRush (Manual)",
     Callback = startBossRush
 })
 
 BossRushTab:CreateToggle({
-    Name = "Stand in the Middle (BossRush)",
+    Name = "Auto-Restart (on Rush Ended)",
     CurrentValue = false,
-    Flag = "StandBossRushFlag",
-    Callback = function(v)
-        standBossRushEnabled = v
-        if v then safeStandAt(bossRushCFrame) end
+    Flag = "AutoRestartBossRushFlag",
+    Callback = function(Value)
+        autoRestartBossRush = Value
     end
 })
 
--- ========== Misc ==========
-local autoClickEnabled, arlecchinoKeyEnabled = false, false
+-- =================== Misc ===================
+local autoClickEnabled = false
+local arlecchinoKeyEnabled = false
 
 MiscTab:CreateToggle({
     Name = "Auto Click",
     CurrentValue = false,
     Flag = "AutoClickFlag",
-    Callback = function(v)
-        autoClickEnabled = v
-        if v then
+    Callback = function(Value)
+        autoClickEnabled = Value
+        if Value then
             task.spawn(function()
-                local WeaponsModule = require(ReplicatedStorage.SharedModules.WeaponsModule)
+                local WeaponsModule = require(game:GetService("ReplicatedStorage").SharedModules.WeaponsModule)
                 while autoClickEnabled do
                     task.wait(0.1)
-                    pcall(function() WeaponsModule.Click({KeyCode = Enum.KeyCode.ButtonX}, false, nil, true) end)
+                    pcall(function()
+                        WeaponsModule.Click({KeyCode = Enum.KeyCode.ButtonX}, false, nil, true)
+                    end)
                 end
             end)
         end
@@ -206,12 +245,23 @@ MiscTab:CreateToggle({
     Name = "Arlecchino Key",
     CurrentValue = false,
     Flag = "ArlecchinoKeyFlag",
-    Callback = function(v)
-        arlecchinoKeyEnabled = v
-        if v then
+    Callback = function(Value)
+        arlecchinoKeyEnabled = Value
+        if Value then
             task.spawn(function()
                 while arlecchinoKeyEnabled do
-                    fireSafe({ { { Event = "CraftItem", Name = "HLKeyBeru" }, "\r" } })
+                    local args = {
+                        {
+                            {
+                                Event = "CraftItem",
+                                Name = "HLKeyBeru"
+                            },
+                            "\r"
+                        }
+                    }
+                    pcall(function()
+                        dataRemoteEvent:FireServer(unpack(args))
+                    end)
                     task.wait(3)
                 end
             end)
@@ -219,19 +269,34 @@ MiscTab:CreateToggle({
     end
 })
 
--- ========== Auto Restart ==========
+-- =================== Teleport on Respawn ===================
+player.CharacterAdded:Connect(function()
+    task.wait(1)
+    if standCastleEnabled then safeStandAt(castleCFrame) end
+    if standDesertEnabled then safeStandAt(desertCFrame) end
+end)
+
+-- =================== Auto-Restart Portal/Boss End ===================
 dataRemoteEvent.OnClientEvent:Connect(function(...)
     local args = {...}
-    local function check(tbl)
-        for k,v in pairs(tbl) do
-            if type(v) == "table" then check(v)
-            elseif k == "Message" and type(v) == "string" and v:upper():find("PORTAL DESTROYED") then
-                if autoRestartCastle then restartCastle() end
-                if autoRestartDesert then restartDesert() end
+    local function recursiveCheck(tbl)
+        if type(tbl) ~= "table" then return end
+        for k, v in pairs(tbl) do
+            if type(v) == "table" then
+                recursiveCheck(v)
+            elseif k == "Message" and type(v) == "string" then
+                local msg = v:upper()
+                if msg:find("PORTAL DESTROYED") then
+                    if autoRestartCastle then restartCastle() end
+                    if autoRestartDesert then restartDesert() end
+                    if autoRestartLabyrinth then restartLabyrinth() end
+                elseif msg:find("RUSH ENDED") then
+                    if autoRestartBossRush then restartBossRush() end
+                end
             end
         end
     end
-    for _,v in ipairs(args) do check(v) end
+    for _, v in ipairs(args) do recursiveCheck(v) end
 end)
 
 Rayfield:LoadConfiguration("InfiniteModesHub")
