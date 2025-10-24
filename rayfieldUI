@@ -78,7 +78,9 @@ local function startCastle()
     task.wait(1)
     fireSafe({ { { Dungeon = 3604563306, Event = "InfiniteCastleAction", Action = "Start" }, "\014" } })
     task.wait(1)
-    if standCastleEnabled then safeStandAt(castleCFrame) end
+    if standCastleEnabled then
+        safeStandAt(castleCFrame)
+    end
 end
 
 local function restartCastle()
@@ -150,19 +152,15 @@ DesertTab:CreateToggle({
     CurrentValue = false,
     Flag = "WaveSpeed2DesertFlag",
     Callback = function(Value)
+        waveSpeed2DesertEnabled = Value
         if Value then
-            if waveSpeed3DesertEnabled then
-                waveSpeed3DesertEnabled = false
-                Rayfield.Flags["WaveSpeed3DesertFlag"].Set(false)
-            end
-            waveSpeed2DesertEnabled = true
+            waveSpeed3DesertEnabled = false
+            Rayfield.Flags["WaveSpeed3DesertFlag"].Set(false)
             task.spawn(function()
                 repeat task.wait(0.1) until player.Character and player.Character:FindFirstChild("HumanoidRootPart")
                 task.wait(5)
                 fireSafe({ { { Speed = 2, Event = "InfiniteModeAction", Action = "SpeedUp" }, "\014" } })
             end)
-        else
-            waveSpeed2DesertEnabled = false
         end
     end
 })
@@ -171,25 +169,91 @@ DesertTab:CreateToggle({
     CurrentValue = false,
     Flag = "WaveSpeed3DesertFlag",
     Callback = function(Value)
+        waveSpeed3DesertEnabled = Value
         if Value then
-            if waveSpeed2DesertEnabled then
-                waveSpeed2DesertEnabled = false
-                Rayfield.Flags["WaveSpeed2DesertFlag"].Set(false)
-            end
-            waveSpeed3DesertEnabled = true
+            waveSpeed2DesertEnabled = false
+            Rayfield.Flags["WaveSpeed2DesertFlag"].Set(false)
             task.spawn(function()
                 repeat task.wait(0.1) until player.Character and player.Character:FindFirstChild("HumanoidRootPart")
                 task.wait(5)
                 fireSafe({ { { Speed = 3, Event = "InfiniteModeAction", Action = "SpeedUp" }, "\014" } })
             end)
-        else
-            waveSpeed3DesertEnabled = false
         end
     end
 })
 
 -- =================== InfLab ===================
--- (lasciata così come funziona bene, non toccata)
+local function startLabyrinth()
+    fireSafe({ { { Event = "InfiniteLabyrinthAction", Action = "Create" }, "\014" } })
+    task.wait(1)
+    fireSafe({ { { Dungeon = 3604563306, Event = "InfiniteLabyrinthAction", Action = "Start" }, "\014" } })
+end
+
+local function restartLabyrinth()
+    safeRejoin(startLabyrinth)
+end
+
+LabTab:CreateButton({
+    Name = "Start Infinite Labyrinth (Manual)",
+    Callback = startLabyrinth
+})
+
+LabTab:CreateToggle({
+    Name = "Auto-Restart (on Portal Destroyed)",
+    CurrentValue = false,
+    Flag = "AutoRestartLabyrinthFlag",
+    Callback = function(Value)
+        autoRestartLabyrinth = Value
+    end
+})
+
+LabTab:CreateToggle({
+    Name = "Speed 1",
+    CurrentValue = false,
+    Flag = "Speed1LabyrinthFlag",
+    Callback = function(Value)
+        speed1LabyrinthEnabled = Value
+        if Value then
+            speed2LabyrinthEnabled = false
+            speed3LabyrinthEnabled = false
+            Rayfield.Flags["Speed2LabyrinthFlag"].Set(false)
+            Rayfield.Flags["Speed3LabyrinthFlag"].Set(false)
+            fireSafe({ { { Speed = 1, Event = "InfiniteLabyrinthAction", Action = "SpeedUp" }, "\014" } })
+        end
+    end
+})
+
+LabTab:CreateToggle({
+    Name = "Speed 2",
+    CurrentValue = false,
+    Flag = "Speed2LabyrinthFlag",
+    Callback = function(Value)
+        speed2LabyrinthEnabled = Value
+        if Value then
+            speed1LabyrinthEnabled = false
+            speed3LabyrinthEnabled = false
+            Rayfield.Flags["Speed1LabyrinthFlag"].Set(false)
+            Rayfield.Flags["Speed3LabyrinthFlag"].Set(false)
+            fireSafe({ { { Speed = 2, Event = "InfiniteLabyrinthAction", Action = "SpeedUp" }, "\014" } })
+        end
+    end
+})
+
+LabTab:CreateToggle({
+    Name = "Speed 3",
+    CurrentValue = false,
+    Flag = "Speed3LabyrinthFlag",
+    Callback = function(Value)
+        speed3LabyrinthEnabled = Value
+        if Value then
+            speed1LabyrinthEnabled = false
+            speed2LabyrinthEnabled = false
+            Rayfield.Flags["Speed1LabyrinthFlag"].Set(false)
+            Rayfield.Flags["Speed2LabyrinthFlag"].Set(false)
+            fireSafe({ { { Speed = 3, Event = "InfiniteLabyrinthAction", Action = "SpeedUp" }, "\014" } })
+        end
+    end
+})
 
 -- =================== BossRush ===================
 local function startBossRush()
@@ -249,6 +313,7 @@ MiscTab:CreateToggle({
         arlecchinoKeyEnabled = Value
         if Value then
             task.spawn(function()
+                local dataEvent = game:GetService("ReplicatedStorage"):WaitForChild("BridgeNet2"):WaitForChild("dataRemoteEvent")
                 while arlecchinoKeyEnabled do
                     local args = {
                         {
@@ -260,7 +325,7 @@ MiscTab:CreateToggle({
                         }
                     }
                     pcall(function()
-                        dataRemoteEvent:FireServer(unpack(args))
+                        dataEvent:FireServer(unpack(args))
                     end)
                     task.wait(3)
                 end
@@ -276,7 +341,7 @@ player.CharacterAdded:Connect(function()
     if standDesertEnabled then safeStandAt(desertCFrame) end
 end)
 
--- =================== Auto-Restart Portal/Boss End ===================
+-- =================== Auto-Restart Portal/Boss ===================
 dataRemoteEvent.OnClientEvent:Connect(function(...)
     local args = {...}
     local function recursiveCheck(tbl)
