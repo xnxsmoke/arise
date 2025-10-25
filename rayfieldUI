@@ -25,17 +25,20 @@ local MiscTab = Window:CreateTab("Misc", 4483362458)
 local standCastleEnabled = false
 local standDesertEnabled = false
 local standBossRushEnabled = false
+
 local autoRestartCastle = false
 local autoRestartDesert = false
 local autoRestartLabyrinth = false
 local autoRestartBossRush = false
+
 local autoClickEnabled = false
 local waveSpeed2DesertEnabled = false
 local waveSpeed3DesertEnabled = false
 local speed1LabyrinthEnabled = false
 local speed2LabyrinthEnabled = false
 local speed3LabyrinthEnabled = false
-local bossRushDifficulty = "Easy"
+
+local bossRushDifficulty = "Normal"
 
 -- =================== Funzioni Utility ===================
 local function safeStandAt(cf)
@@ -81,7 +84,9 @@ local function startCastle()
     if standCastleEnabled then safeStandAt(castleCFrame) end
 end
 
-local function restartCastle() safeRejoin(startCastle) end
+local function restartCastle()
+    safeRejoin(startCastle)
+end
 
 CastleTab:CreateButton({ Name = "Start Infinite Castle (Manual)", Callback = startCastle })
 CastleTab:CreateToggle({
@@ -119,11 +124,12 @@ local function startDesert()
     fireSafe({ { { Event = "InfiniteModeAction", Action = "Create" }, "\014" } })
     task.wait(1)
     fireSafe({ { { Dungeon = 3604563306, Event = "InfiniteModeAction", Action = "Start" }, "\014" } })
-    task.wait(1)
     if standDesertEnabled then safeStandAt(desertCFrame) end
 end
 
-local function restartDesert() safeRejoin(startDesert) end
+local function restartDesert()
+    safeRejoin(startDesert)
+end
 
 DesertTab:CreateButton({ Name = "Start Infinite Desert (Manual)", Callback = startDesert })
 DesertTab:CreateToggle({
@@ -183,15 +189,22 @@ local function startLabyrinth()
     fireSafe({ { { Dungeon = 3604563306, Event = "InfiniteLabyrinthAction", Action = "Start" }, "\014" } })
 end
 
-local function restartLabyrinth() safeRejoin(startLabyrinth) end
+local function restartLabyrinth()
+    safeRejoin(startLabyrinth)
+end
 
-LabTab:CreateButton({ Name = "Start Infinite Labyrinth (Manual)", Callback = startLabyrinth })
+LabTab:CreateButton({
+    Name = "Start Infinite Labyrinth (Manual)",
+    Callback = startLabyrinth
+})
+
 LabTab:CreateToggle({
     Name = "Auto-Restart (on Portal Destroyed)",
     CurrentValue = false,
     Flag = "AutoRestartLabyrinthFlag",
     Callback = function(Value) autoRestartLabyrinth = Value end
 })
+
 LabTab:CreateToggle({
     Name = "Speed 1",
     CurrentValue = false,
@@ -207,6 +220,7 @@ LabTab:CreateToggle({
         end
     end
 })
+
 LabTab:CreateToggle({
     Name = "Speed 2",
     CurrentValue = false,
@@ -222,6 +236,7 @@ LabTab:CreateToggle({
         end
     end
 })
+
 LabTab:CreateToggle({
     Name = "Speed 3",
     CurrentValue = false,
@@ -239,19 +254,33 @@ LabTab:CreateToggle({
 })
 
 -- =================== BossRush ===================
-local difficultyMap = { Easy="Easy", Normal="Normal", Hard="Hard", Insane="Insane" }
-
 local function startBossRush()
     fireSafe({ { { Event = "BossRushAction", Action = "Create" }, "\015" } })
     task.wait(1)
-    local diffToSend = difficultyMap[bossRushDifficulty] or "Easy"
-    fireSafe({ { { Dungeon = 3604563306, Event = "BossRushAction", Action = "Start", Diff = diffToSend }, "\015" } })
+    local args = {
+        {
+            {
+                Dungeon = 3604563306,
+                Action = "Start",
+                Diff = bossRushDifficulty,
+                Event = "BossRushAction"
+            },
+            "\015"
+        }
+    }
+    fireSafe(args)
     if standBossRushEnabled then safeStandAt(bossRushCFrame) end
 end
 
-local function restartBossRush() safeRejoin(startBossRush) end
+local function restartBossRush()
+    safeRejoin(startBossRush)
+end
 
-BossRushTab:CreateButton({ Name = "Start BossRush (Manual)", Callback = startBossRush })
+BossRushTab:CreateButton({
+    Name = "Start BossRush (Manual)",
+    Callback = startBossRush
+})
+
 BossRushTab:CreateToggle({
     Name = "Stand in the Middle (BossRush)",
     CurrentValue = false,
@@ -261,15 +290,7 @@ BossRushTab:CreateToggle({
         if Value then safeStandAt(bossRushCFrame) end
     end
 })
-BossRushTab:CreateDropdown({
-    Name = "Difficulty",
-    CurrentOption = "Easy",
-    Options = {"Easy","Normal","Hard","Insane"},
-    Flag = "BossRushDifficultyFlag",
-    Callback = function(Value)
-        bossRushDifficulty = Value
-    end
-})
+
 BossRushTab:CreateToggle({
     Name = "Auto-Restart (on Rush Ended)",
     CurrentValue = false,
@@ -278,9 +299,6 @@ BossRushTab:CreateToggle({
 })
 
 -- =================== Misc ===================
-local autoClickEnabled = false
-local arlecchinoKeyEnabled = false
-
 MiscTab:CreateToggle({
     Name = "Auto Click",
     CurrentValue = false,
@@ -306,12 +324,18 @@ MiscTab:CreateToggle({
     CurrentValue = false,
     Flag = "ArlecchinoKeyFlag",
     Callback = function(Value)
-        arlecchinoKeyEnabled = Value
         if Value then
             task.spawn(function()
-                while arlecchinoKeyEnabled do
-                    local args = { { { Event = "CraftItem", Name = "HLKeyBeru" }, "\r" } }
-                    pcall(function() dataRemoteEvent:FireServer(unpack(args)) end)
+                while Value do
+                    local args = {
+                        {
+                            { Event = "CraftItem", Name = "HLKeyBeru" },
+                            "\r"
+                        }
+                    }
+                    pcall(function()
+                        dataRemoteEvent:FireServer(unpack(args))
+                    end)
                     task.wait(3)
                 end
             end)
