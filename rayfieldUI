@@ -4,10 +4,12 @@ local Players = game:GetService("Players")
 local player = Players.LocalPlayer
 local dataRemoteEvent = ReplicatedStorage:WaitForChild("BridgeNet2"):WaitForChild("dataRemoteEvent")
 
+-- =================== CFrames ===================
 local castleCFrame = CFrame.new(432.6329, 4384.6372, -1898.6741)
 local desertCFrame = CFrame.new(463.8988, 4383.7646, -1888.2440)
 local bossRushCFrame = CFrame.new(216.035507, 1594.49414, -4315.56738)
 
+-- =================== Window ===================
 local Window = Rayfield:CreateWindow({
     Name = "xnxsmoke Hub",
     LoadingTitle = "xnxsmoke Loader",
@@ -32,6 +34,8 @@ local autoRestartLabyrinth = false
 local autoRestartBossRush = false
 
 local autoClickEnabled = false
+local arlecchinoKeyEnabled = false
+
 local waveSpeed2DesertEnabled = false
 local waveSpeed3DesertEnabled = false
 
@@ -128,7 +132,9 @@ local function startDesert()
     task.wait(1)
     fireSafe({ { { Dungeon = 3604563306, Event = "InfiniteModeAction", Action = "Start" }, "\014" } })
     task.wait(1)
-    if standDesertEnabled then safeStandAt(desertCFrame) end
+    if standDesertEnabled then
+        safeStandAt(desertCFrame)
+    end
 end
 
 local function restartDesert()
@@ -197,20 +203,13 @@ local function restartLabyrinth()
     safeRejoin(startLabyrinth)
 end
 
-LabTab:CreateButton({
-    Name = "Start Infinite Labyrinth (Manual)",
-    Callback = startLabyrinth
-})
-
+LabTab:CreateButton({ Name = "Start Infinite Labyrinth (Manual)", Callback = startLabyrinth })
 LabTab:CreateToggle({
     Name = "Auto-Restart (on Portal Destroyed)",
     CurrentValue = false,
     Flag = "AutoRestartLabyrinthFlag",
-    Callback = function(Value)
-        autoRestartLabyrinth = Value
-    end
+    Callback = function(Value) autoRestartLabyrinth = Value end
 })
-
 LabTab:CreateToggle({
     Name = "Speed 1",
     CurrentValue = false,
@@ -226,7 +225,6 @@ LabTab:CreateToggle({
         end
     end
 })
-
 LabTab:CreateToggle({
     Name = "Speed 2",
     CurrentValue = false,
@@ -242,7 +240,6 @@ LabTab:CreateToggle({
         end
     end
 })
-
 LabTab:CreateToggle({
     Name = "Speed 3",
     CurrentValue = false,
@@ -273,11 +270,16 @@ local function restartBossRush()
     safeRejoin(startBossRush)
 end
 
-BossRushTab:CreateButton({
-    Name = "Start BossRush (Manual)",
-    Callback = startBossRush
+BossRushTab:CreateButton({ Name = "Start BossRush (Manual)", Callback = startBossRush })
+BossRushTab:CreateDropdown({
+    Name = "Difficulty",
+    Options = {"Easy","Normal","Hard","Insane"},
+    CurrentOption = "Easy",
+    Flag = "BossRushDifficultyFlag",
+    Callback = function(Value)
+        bossRushDifficulty = Value
+    end
 })
-
 BossRushTab:CreateToggle({
     Name = "Stand in the Middle (BossRush)",
     CurrentValue = false,
@@ -287,29 +289,14 @@ BossRushTab:CreateToggle({
         if Value then safeStandAt(bossRushCFrame) end
     end
 })
-
-BossRushTab:CreateDropdown({
-    Name = "Select Difficulty",
-    Options = {"Easy", "Normal", "Hard", "Insane"},
-    CurrentOption = "Easy",
-    Flag = "BossRushDifficultyFlag",
-    Callback = function(Value)
-        bossRushDifficulty = Value
-    end
-})
-
 BossRushTab:CreateToggle({
     Name = "Auto-Restart (on Rush Ended)",
     CurrentValue = false,
     Flag = "AutoRestartBossRushFlag",
-    Callback = function(Value)
-        autoRestartBossRush = Value
-    end
+    Callback = function(Value) autoRestartBossRush = Value end
 })
 
 -- =================== Misc ===================
-local arlecchinoKeyEnabled = false
-
 MiscTab:CreateToggle({
     Name = "Auto Click",
     CurrentValue = false,
@@ -329,7 +316,6 @@ MiscTab:CreateToggle({
         end
     end
 })
-
 MiscTab:CreateToggle({
     Name = "Arlecchino Key",
     CurrentValue = false,
@@ -348,9 +334,7 @@ MiscTab:CreateToggle({
                             "\r"
                         }
                     }
-                    pcall(function()
-                        dataRemoteEvent:FireServer(unpack(args))
-                    end)
+                    pcall(function() dataRemoteEvent:FireServer(unpack(args)) end)
                     task.wait(3)
                 end
             end)
@@ -366,7 +350,7 @@ player.CharacterAdded:Connect(function()
     if standBossRushEnabled then safeStandAt(bossRushCFrame) end
 end)
 
--- =================== Auto-Restart Portal/Rush End ===================
+-- =================== Auto-Restart Portal/Boss ===================
 dataRemoteEvent.OnClientEvent:Connect(function(...)
     local args = {...}
     local function recursiveCheck(tbl)
