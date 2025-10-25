@@ -18,28 +18,25 @@ local Window = Rayfield:CreateWindow({
 local CastleTab = Window:CreateTab("InfCastle", 4483362458)
 local DesertTab = Window:CreateTab("InfDesert", 4483362458)
 local LabTab = Window:CreateTab("InfLab", 4483362458)
-local BossRushTab = Window:CreateTab("BossRush", 4483362458)
+local BossRushTab = Window:CreateTab("RushBoss", 4483362458)
 local MiscTab = Window:CreateTab("Misc", 4483362458)
 
 -- =================== Variabili ===================
 local standCastleEnabled = false
 local standDesertEnabled = false
-local standBossRushEnabled = false
-
 local autoRestartCastle = false
 local autoRestartDesert = false
-local autoRestartLabyrinth = false
-local autoRestartBossRush = false
-
 local autoClickEnabled = false
-local arlecchinoKeyEnabled = false
-
 local waveSpeed2DesertEnabled = false
 local waveSpeed3DesertEnabled = false
 
+local autoRestartLabyrinth = false
 local speed1LabyrinthEnabled = false
 local speed2LabyrinthEnabled = false
 local speed3LabyrinthEnabled = false
+
+local autoRestartBossRush = false
+local bossRushDifficulty = "Easy" -- default
 
 -- =================== Funzioni Utility ===================
 local function safeStandAt(cf)
@@ -195,11 +192,7 @@ local function restartLabyrinth()
     safeRejoin(startLabyrinth)
 end
 
-LabTab:CreateButton({
-    Name = "Start Infinite Labyrinth (Manual)",
-    Callback = startLabyrinth
-})
-
+LabTab:CreateButton({ Name = "Start Infinite Labyrinth (Manual)", Callback = startLabyrinth })
 LabTab:CreateToggle({
     Name = "Auto-Restart (on Portal Destroyed)",
     CurrentValue = false,
@@ -208,7 +201,6 @@ LabTab:CreateToggle({
         autoRestartLabyrinth = Value
     end
 })
-
 LabTab:CreateToggle({
     Name = "Speed 1",
     CurrentValue = false,
@@ -224,7 +216,6 @@ LabTab:CreateToggle({
         end
     end
 })
-
 LabTab:CreateToggle({
     Name = "Speed 2",
     CurrentValue = false,
@@ -240,7 +231,6 @@ LabTab:CreateToggle({
         end
     end
 })
-
 LabTab:CreateToggle({
     Name = "Speed 3",
     CurrentValue = false,
@@ -261,10 +251,8 @@ LabTab:CreateToggle({
 local function startBossRush()
     fireSafe({ { { Event = "BossRushAction", Action = "Create" }, "\015" } })
     task.wait(1)
-    fireSafe({ { { Dungeon = 3604563306, Event = "BossRushAction", Action = "Start", Diff = "Easy" }, "\015" } })
-    if standBossRushEnabled then
-        safeStandAt(bossRushCFrame)
-    end
+    fireSafe({ { { Dungeon = 3604563306, Event = "BossRushAction", Action = "Start", Diff = bossRushDifficulty }, "\015" } })
+    safeStandAt(bossRushCFrame)
 end
 
 local function restartBossRush()
@@ -275,19 +263,15 @@ BossRushTab:CreateButton({
     Name = "Start BossRush (Manual)",
     Callback = startBossRush
 })
-
-BossRushTab:CreateToggle({
-    Name = "Stand in the Middle (BossRush)",
-    CurrentValue = false,
-    Flag = "StandBossRushFlag",
+BossRushTab:CreateDropdown({
+    Name = "Select Difficulty",
+    Options = {"Easy", "Normal", "Hard", "Insane"},
+    CurrentOption = "Easy",
+    Flag = "BossRushDifficultyFlag",
     Callback = function(Value)
-        standBossRushEnabled = Value
-        if Value then
-            safeStandAt(bossRushCFrame)
-        end
+        bossRushDifficulty = Value
     end
 })
-
 BossRushTab:CreateToggle({
     Name = "Auto-Restart (on Rush Ended)",
     CurrentValue = false,
@@ -298,6 +282,9 @@ BossRushTab:CreateToggle({
 })
 
 -- =================== Misc ===================
+local autoClickEnabled = false
+local arlecchinoKeyEnabled = false
+
 MiscTab:CreateToggle({
     Name = "Auto Click",
     CurrentValue = false,
@@ -351,10 +338,9 @@ player.CharacterAdded:Connect(function()
     task.wait(1)
     if standCastleEnabled then safeStandAt(castleCFrame) end
     if standDesertEnabled then safeStandAt(desertCFrame) end
-    if standBossRushEnabled then safeStandAt(bossRushCFrame) end
 end)
 
--- =================== Auto-Restart Portal/Boss ===================
+-- =================== Auto-Restart Portal/Boss End ===================
 dataRemoteEvent.OnClientEvent:Connect(function(...)
     local args = {...}
     local function recursiveCheck(tbl)
