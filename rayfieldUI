@@ -102,23 +102,46 @@ LabTab:CreateButton({ Name = "Start Infinite Labyrinth (Manual)", Callback = sta
 LabTab:CreateToggle({ Name = "Auto-Restart (on Portal Destroyed)", CurrentValue = false, Callback = function(v) autoRestartLabyrinth = v end })
 
 -- =================== BossRush ===================
-local function startBossRush()
-    local args = {
-        {
+local function startBossRush(mode)
+    task.spawn(function()
+        -- Step 1: Create
+        local createArgs = {
             {
-                Dungeon = 3604563306,
-                Action = "Start",
-                Diff = "Normal",
-                Event = "BossRushAction"
-            },
-            "\015"
+                {
+                    Event = "BossRushAction",
+                    Action = "Create"
+                },
+                "\004"
+            }
         }
-    }
-    fireSafe(args)
-    safeStandAt(bossRushCFrame)
+        fireSafe(createArgs)
+        task.wait(1) -- piccolo delay
+
+        -- Step 2: Start con modalità scelta
+        local startArgs = {
+            {
+                {
+                    Dungeon = 3604563306,
+                    Action = "Start",
+                    Diff = mode or "Normal", -- Normal di default
+                    Event = "BossRushAction"
+                },
+                "\004"
+            }
+        }
+        fireSafe(startArgs)
+
+        -- Step 3: Teletrasporto sicuro
+        repeat task.wait(0.1) until player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+        task.wait(0.5)
+        safeStandAt(bossRushCFrame)
+
+        print("[BossRush] Start completato con modalità:", mode)
+    end)
 end
-local function restartBossRush() safeRejoin(startBossRush) end
-BossRushTab:CreateButton({ Name = "Start BossRush (Manual)", Callback = startBossRush })
+local function restartBossRush() safeRejoin(function() startBossRush("Normal") end) end
+
+BossRushTab:CreateButton({ Name = "Start BossRush (Manual)", Callback = function() startBossRush("Normal") end })
 BossRushTab:CreateToggle({ Name = "Auto-Restart (on Rush Ended)", CurrentValue = false, Callback = function(v) autoRestartBossRush = v end })
 BossRushTab:CreateToggle({ Name = "Stand in the Middle (BossRush)", CurrentValue = false, Callback = function(v) if v then safeStandAt(bossRushCFrame) end end })
 
@@ -212,4 +235,4 @@ dataRemoteEvent.OnClientEvent:Connect(function(...)
 end)
 
 -- =================== Load Configuration ===================
-Window:LoadConfiguration("InfiniteModesHub") -- ✅ corretto
+Window:LoadConfiguration("InfiniteModesHub") -- AutoSave funzionante
