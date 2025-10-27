@@ -108,7 +108,7 @@ local function startBossRush()
             {
                 Dungeon = 3604563306,
                 Action = "Start",
-                Diff = "Normal", -- Puoi cambiare qui la difficoltà
+                Diff = "Normal",
                 Event = "BossRushAction"
             },
             "\015"
@@ -211,4 +211,5 @@ dataRemoteEvent.OnClientEvent:Connect(function(...)
     for _, v in ipairs(args) do recursiveCheck(v) end
 end)
 
-Rayfield:LoadConfiguration("InfiniteModesHub")
+-- =================== Load Configuration ===================
+Window:LoadConfiguration("InfiniteModesHub") -- ✅ corretto
