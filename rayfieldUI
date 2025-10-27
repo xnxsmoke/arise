@@ -14,7 +14,7 @@ local Window = Rayfield:CreateWindow({
     Name = "xnxsmoke Hub",
     LoadingTitle = "xnxsmoke Loader",
     LoadingSubtitle = "by xnxsmoke",
-    ConfigurationSaving = { Enabled = true, FileName = "InfiniteModesHub", AutoSave = true }, -- ✅ AutoSave abilitato
+    ConfigurationSaving = { Enabled = true, FileName = "InfiniteModesHub", AutoSave = true },
 })
 
 -- =================== Tabs ===================
@@ -75,8 +75,8 @@ end
 local function restartCastle() safeRejoin(startCastle) end
 
 CastleTab:CreateButton({ Name = "Start Infinite Castle (Manual)", Callback = startCastle })
-CastleTab:CreateToggle({ Name = "Stand in the Middle (InfCastle)", CurrentValue = false, Flag = "StandCastleFlag", Callback = function(v) standCastleEnabled = v if v then safeStandAt(castleCFrame) end end })
-CastleTab:CreateToggle({ Name = "Auto-Restart (on Portal Destroyed)", CurrentValue = false, Flag = "AutoRestartCastleFlag", Callback = function(v) autoRestartCastle = v end })
+CastleTab:CreateToggle({ Name = "Stand in the Middle (InfCastle)", CurrentValue = false, Callback = function(v) standCastleEnabled = v if v then safeStandAt(castleCFrame) end end })
+CastleTab:CreateToggle({ Name = "Auto-Restart (on Portal Destroyed)", CurrentValue = false, Callback = function(v) autoRestartCastle = v end })
 
 -- =================== Infinite Desert ===================
 local function startDesert()
@@ -88,8 +88,8 @@ end
 local function restartDesert() safeRejoin(startDesert) end
 
 DesertTab:CreateButton({ Name = "Start Infinite Desert (Manual)", Callback = startDesert })
-DesertTab:CreateToggle({ Name = "Stand in the Middle (InfDesert)", CurrentValue = false, Flag = "StandDesertFlag", Callback = function(v) standDesertEnabled = v if v then safeStandAt(desertCFrame) end end })
-DesertTab:CreateToggle({ Name = "Auto-Restart (on Portal Destroyed)", CurrentValue = false, Flag = "AutoRestartDesertFlag", Callback = function(v) autoRestartDesert = v end })
+DesertTab:CreateToggle({ Name = "Stand in the Middle (InfDesert)", CurrentValue = false, Callback = function(v) standDesertEnabled = v if v then safeStandAt(desertCFrame) end end })
+DesertTab:CreateToggle({ Name = "Auto-Restart (on Portal Destroyed)", CurrentValue = false, Callback = function(v) autoRestartDesert = v end })
 
 -- =================== Infinite Labyrinth ===================
 local function startLabyrinth()
@@ -99,33 +99,28 @@ local function startLabyrinth()
 end
 local function restartLabyrinth() safeRejoin(startLabyrinth) end
 LabTab:CreateButton({ Name = "Start Infinite Labyrinth (Manual)", Callback = startLabyrinth })
-LabTab:CreateToggle({ Name = "Auto-Restart (on Portal Destroyed)", CurrentValue = false, Flag = "AutoRestartLabyrinthFlag", Callback = function(v) autoRestartLabyrinth = v end })
+LabTab:CreateToggle({ Name = "Auto-Restart (on Portal Destroyed)", CurrentValue = false, Callback = function(v) autoRestartLabyrinth = v end })
 
 -- =================== BossRush ===================
-local function startBossRush(mode)
-    task.spawn(function()
-        -- Step 1: Create
-        fireSafe({ { Event = "BossRushAction", Action = "Create" } })
-        task.wait(1.5) -- attendi generazione della lobby
-
-        -- Step 2: Start
-        fireSafe({ { Event = "BossRushAction", Action = "Start", Dungeon = 3604563306, Diff = mode or "Normal" } })
-
-        -- Step 3: Aspetta che la spawn area sia pronta
-        local ws = game:GetService("Workspace")
-        repeat task.wait(0.1) until ws:FindFirstChild("__MAP") or ws:FindFirstChild("BossRushSpawn")
-
-        -- Step 4: Teletrasporto sicuro
-        repeat task.wait(0.1) until player.Character and player.Character:FindFirstChild("HumanoidRootPart")
-        task.wait(0.2)
-        safeStandAt(bossRushCFrame)
-    end)
+local function startBossRush()
+    local args = {
+        {
+            {
+                Dungeon = 3604563306,
+                Action = "Start",
+                Diff = "Normal", -- Puoi cambiare qui la difficoltà
+                Event = "BossRushAction"
+            },
+            "\015"
+        }
+    }
+    fireSafe(args)
+    safeStandAt(bossRushCFrame)
 end
-local function restartBossRush() safeRejoin(function() startBossRush("Normal") end) end
-
-BossRushTab:CreateButton({ Name = "Start BossRush (Manual)", Flag = "StartBossRushFlag", Callback = function() startBossRush("Normal") end })
-BossRushTab:CreateToggle({ Name = "Auto-Restart (on Rush Ended)", CurrentValue = false, Flag = "AutoRestartBossRushFlag", Callback = function(v) autoRestartBossRush = v end })
-BossRushTab:CreateToggle({ Name = "Stand in the Middle (BossRush)", CurrentValue = false, Flag = "StandBossRushFlag", Callback = function(v) if v then safeStandAt(bossRushCFrame) end end })
+local function restartBossRush() safeRejoin(startBossRush) end
+BossRushTab:CreateButton({ Name = "Start BossRush (Manual)", Callback = startBossRush })
+BossRushTab:CreateToggle({ Name = "Auto-Restart (on Rush Ended)", CurrentValue = false, Callback = function(v) autoRestartBossRush = v end })
+BossRushTab:CreateToggle({ Name = "Stand in the Middle (BossRush)", CurrentValue = false, Callback = function(v) if v then safeStandAt(bossRushCFrame) end end })
 
 -- =================== HospRaid ===================
 local function isInHospRaid()
@@ -135,20 +130,31 @@ end
 
 local function joinHospRaid()
     if isInHospRaid() then return end
-    fireSafe({ { Event = "HLRaidAction", Action = "Join" } })
+    local args = {
+        {
+            {
+                Event = "HLRaidAction",
+                Action = "Join"
+            },
+            "\004"
+        }
+    }
+    fireSafe(args)
+    print("[HospRaid] Tentativo di join eseguito.")
 end
 
 HospRaidTab:CreateToggle({
     Name = "Auto Join HospRaid",
     CurrentValue = false,
-    Flag = "AutoJoinHospRaidFlag",
     Callback = function(Value)
         hospRaidEnabled = Value
         if Value then
             task.spawn(function()
                 while hospRaidEnabled do
                     task.wait(5)
-                    if not isInHospRaid() then joinHospRaid() end
+                    if not isInHospRaid() then
+                        joinHospRaid()
+                    end
                 end
             end)
         end
@@ -160,7 +166,6 @@ local autoClickEnabled = false
 MiscTab:CreateToggle({
     Name = "Auto Click",
     CurrentValue = false,
-    Flag = "AutoClickFlag",
     Callback = function(Value)
         autoClickEnabled = Value
         if Value then
@@ -168,7 +173,9 @@ MiscTab:CreateToggle({
                 local WeaponsModule = require(game:GetService("ReplicatedStorage").SharedModules.WeaponsModule)
                 while autoClickEnabled do
                     task.wait(0.1)
-                    pcall(function() WeaponsModule.Click({KeyCode = Enum.KeyCode.ButtonX}, false, nil, true) end)
+                    pcall(function()
+                        WeaponsModule.Click({KeyCode = Enum.KeyCode.ButtonX}, false, nil, true)
+                    end)
                 end
             end)
         end
@@ -187,7 +194,8 @@ dataRemoteEvent.OnClientEvent:Connect(function(...)
     local function recursiveCheck(tbl)
         if type(tbl) ~= "table" then return end
         for k, v in pairs(tbl) do
-            if type(v) == "table" then recursiveCheck(v)
+            if type(v) == "table" then
+                recursiveCheck(v)
             elseif k == "Message" and type(v) == "string" then
                 local msg = v:upper()
                 if msg:find("PORTAL DESTROYED") then
@@ -203,5 +211,4 @@ dataRemoteEvent.OnClientEvent:Connect(function(...)
     for _, v in ipairs(args) do recursiveCheck(v) end
 end)
 
--- =================== Load Configuration ===================
-Window:LoadConfiguration("InfiniteModesHub") -- ✅ Posizionato in fondo, dopo tutti gli elementi
+Rayfield:LoadConfiguration("InfiniteModesHub")
