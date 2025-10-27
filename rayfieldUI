@@ -104,39 +104,24 @@ LabTab:CreateToggle({ Name = "Auto-Restart (on Portal Destroyed)", CurrentValue 
 -- =================== BossRush ===================
 local function startBossRush(mode)
     task.spawn(function()
-        -- Step 1: Create
-        local createArgs = {
-            {
-                {
-                    Event = "BossRushAction",
-                    Action = "Create"
-                },
-                "\004"
-            }
-        }
-        fireSafe(createArgs)
-        task.wait(1) -- piccolo delay
+        -- Step 1: Create BossRush
+        fireSafe({ { Event = "BossRushAction", Action = "Create" } })
+        print("[BossRush] Lobby Create inviata")
+        task.wait(1.5) -- attendi generazione della lobby
 
-        -- Step 2: Start con modalità scelta
-        local startArgs = {
-            {
-                {
-                    Dungeon = 3604563306,
-                    Action = "Start",
-                    Diff = mode or "Normal", -- Normal di default
-                    Event = "BossRushAction"
-                },
-                "\004"
-            }
-        }
-        fireSafe(startArgs)
+        -- Step 2: Start BossRush
+        fireSafe({ { Event = "BossRushAction", Action = "Start", Dungeon = 3604563306, Diff = mode or "Normal" } })
+        print("[BossRush] Start inviata con modalità:", mode)
 
-        -- Step 3: Teletrasporto sicuro
+        -- Step 3: Aspetta che la spawn area sia pronta
+        local ws = game:GetService("Workspace")
+        repeat task.wait(0.1) until ws:FindFirstChild("__MAP") or ws:FindFirstChild("BossRushSpawn")
+
+        -- Step 4: Teletrasporto sicuro
         repeat task.wait(0.1) until player.Character and player.Character:FindFirstChild("HumanoidRootPart")
-        task.wait(0.5)
+        task.wait(0.2)
         safeStandAt(bossRushCFrame)
-
-        print("[BossRush] Start completato con modalità:", mode)
+        print("[BossRush] Teletrasporto completato")
     end)
 end
 local function restartBossRush() safeRejoin(function() startBossRush("Normal") end) end
@@ -153,16 +138,7 @@ end
 
 local function joinHospRaid()
     if isInHospRaid() then return end
-    local args = {
-        {
-            {
-                Event = "HLRaidAction",
-                Action = "Join"
-            },
-            "\004"
-        }
-    }
-    fireSafe(args)
+    fireSafe({ { Event = "HLRaidAction", Action = "Join" } })
     print("[HospRaid] Tentativo di join eseguito.")
 end
 
