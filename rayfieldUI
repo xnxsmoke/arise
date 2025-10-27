@@ -6,7 +6,7 @@ local dataRemoteEvent = ReplicatedStorage:WaitForChild("BridgeNet2"):WaitForChil
 
 local castleCFrame = CFrame.new(432.6329, 4384.6372, -1898.6741)
 local desertCFrame = CFrame.new(463.8988, 4383.7646, -1888.2440)
-local cemetryRushCFrame = CFrame.new(217.90097045898438, 1594.8858642578125, -4174.68115234375)
+local cemetryRushCFrame = CFrame.new(214.981415, 1594.494141, -4312.195801)
 
 local Window = Rayfield:CreateWindow({
     Name = "xnxsmoke Hub",
