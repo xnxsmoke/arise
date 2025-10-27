@@ -18,9 +18,9 @@ local Window = Rayfield:CreateWindow({
 local CastleTab = Window:CreateTab("InfCastle", 4483362458)
 local DesertTab = Window:CreateTab("InfDesert", 4483362458)
 local LabTab = Window:CreateTab("InfLab", 4483362458)
-local MiscTab = Window:CreateTab("Misc", 4483362458)
 local HospRaidTab = Window:CreateTab("HospRaid", 4483362458)
 local CemetryRushTab = Window:CreateTab("CemetryRush", 4483362458)
+local MiscTab = Window:CreateTab("Misc", 4483362458)
 
 -- =================== Variables ===================
 local standCastleEnabled, standDesertEnabled, autoRestartCastle, autoRestartDesert = false, false, false, false
