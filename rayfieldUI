@@ -70,17 +70,21 @@ local function safeRejoin(joinFunction)
     end)
 end
 
+local function speedUp(modeEvent, speed)
+    local args = {
+        {
+            { Speed = speed, Event = modeEvent, Action = "SpeedUp" },
+            "\004"
+        }
+    }
+    fireSafe(args)
+end
+
 -- =================== Infinite Castle ===================
 local function startCastle()
-    local argsCreate = {
-        { { Event = "InfiniteCastleAction", Action = "Create" }, "\004" }
-    }
-    fireSafe(argsCreate)
+    fireSafe({ { { Event = "InfiniteCastleAction", Action = "Create" }, "\004" } })
     task.wait(1)
-    local argsStart = {
-        { { Dungeon = 3604563306, Event = "InfiniteCastleAction", Action = "Start" }, "\004" }
-    }
-    fireSafe(argsStart)
+    fireSafe({ { { Dungeon = 3604563306, Event = "InfiniteCastleAction", Action = "Start" }, "\004" } })
     task.wait(1)
     if standCastleEnabled then safeStandAt(castleCFrame) end
 end
@@ -113,8 +117,8 @@ CastleTab:CreateToggle({
         if Value then
             task.spawn(function()
                 repeat task.wait(0.1) until player.Character and player.Character:FindFirstChild("HumanoidRootPart")
-                task.wait(5)
-                fireSafe({ { { Speed = 3, Event = "InfiniteCastleAction", Action = "SpeedUp" }, "\004" } })
+                task.wait(2)
+                speedUp("InfiniteCastleAction", 3)
             end)
         end
     end
@@ -122,15 +126,9 @@ CastleTab:CreateToggle({
 
 -- =================== Infinite Desert ===================
 local function startDesert()
-    local argsCreate = {
-        { { Event = "InfiniteModeAction", Action = "Create" }, "\004" }
-    }
-    fireSafe(argsCreate)
+    fireSafe({ { { Event = "InfiniteModeAction", Action = "Create" }, "\004" } })
     task.wait(1)
-    local argsStart = {
-        { { Dungeon = 3604563306, Event = "InfiniteModeAction", Action = "Start" }, "\004" }
-    }
-    fireSafe(argsStart)
+    fireSafe({ { { Dungeon = 3604563306, Event = "InfiniteModeAction", Action = "Start" }, "\004" } })
     task.wait(1)
     if standDesertEnabled then safeStandAt(desertCFrame) end
 end
@@ -160,14 +158,13 @@ DesertTab:CreateToggle({
     CurrentValue = false,
     Flag = "WaveSpeed2DesertFlag",
     Callback = function(Value)
-        waveSpeed2DesertEnabled = Value
         if Value then
             waveSpeed3DesertEnabled = false
             Rayfield.Flags["WaveSpeed3DesertFlag"].Set(false)
             task.spawn(function()
                 repeat task.wait(0.1) until player.Character and player.Character:FindFirstChild("HumanoidRootPart")
-                task.wait(5)
-                fireSafe({ { { Speed = 2, Event = "InfiniteModeAction", Action = "SpeedUp" }, "\004" } })
+                task.wait(2)
+                speedUp("InfiniteModeAction", 2)
             end)
         end
     end
@@ -177,14 +174,13 @@ DesertTab:CreateToggle({
     CurrentValue = false,
     Flag = "WaveSpeed3DesertFlag",
     Callback = function(Value)
-        waveSpeed3DesertEnabled = Value
         if Value then
             waveSpeed2DesertEnabled = false
             Rayfield.Flags["WaveSpeed2DesertFlag"].Set(false)
             task.spawn(function()
                 repeat task.wait(0.1) until player.Character and player.Character:FindFirstChild("HumanoidRootPart")
-                task.wait(5)
-                fireSafe({ { { Speed = 3, Event = "InfiniteModeAction", Action = "SpeedUp" }, "\004" } })
+                task.wait(2)
+                speedUp("InfiniteModeAction", 3)
             end)
         end
     end
@@ -192,26 +188,13 @@ DesertTab:CreateToggle({
 
 -- =================== Infinite Labyrinth ===================
 local function startLabyrinth()
-    local argsCreate = {
-        { { Event = "InfiniteLabyrinthAction", Action = "Create" }, "\004" }
-    }
-    fireSafe(argsCreate)
+    fireSafe({ { { Event = "InfiniteLabyrinthAction", Action = "Create" }, "\004" } })
     task.wait(1)
-    local argsStart = {
-        { { Dungeon = 3604563306, Event = "InfiniteLabyrinthAction", Action = "Start" }, "\004" }
-    }
-    fireSafe(argsStart)
+    fireSafe({ { { Dungeon = 3604563306, Event = "InfiniteLabyrinthAction", Action = "Start" }, "\004" } })
 end
 
 local function restartLabyrinth()
     safeRejoin(startLabyrinth)
-end
-
-local function speedUpLabyrinth(speed)
-    local args = {
-        { { Speed = speed, Event = "InfiniteLabyrinthAction", Action = "SpeedUp" }, "\004" }
-    }
-    fireSafe(args)
 end
 
 LabTab:CreateButton({ Name = "Start Infinite Labyrinth (Manual)", Callback = startLabyrinth })
@@ -232,7 +215,7 @@ LabTab:CreateToggle({
             speed3LabyrinthEnabled = false
             Rayfield.Flags["Speed2LabyrinthFlag"].Set(false)
             Rayfield.Flags["Speed3LabyrinthFlag"].Set(false)
-            speedUpLabyrinth(1)
+            speedUp("InfiniteLabyrinthAction", 1)
         end
     end
 })
@@ -247,7 +230,7 @@ LabTab:CreateToggle({
             speed3LabyrinthEnabled = false
             Rayfield.Flags["Speed1LabyrinthFlag"].Set(false)
             Rayfield.Flags["Speed3LabyrinthFlag"].Set(false)
-            speedUpLabyrinth(2)
+            speedUp("InfiniteLabyrinthAction", 2)
         end
     end
 })
@@ -262,7 +245,7 @@ LabTab:CreateToggle({
             speed2LabyrinthEnabled = false
             Rayfield.Flags["Speed1LabyrinthFlag"].Set(false)
             Rayfield.Flags["Speed2LabyrinthFlag"].Set(false)
-            speedUpLabyrinth(3)
+            speedUp("InfiniteLabyrinthAction", 3)
         end
     end
 })
@@ -298,9 +281,7 @@ MiscTab:CreateToggle({
             task.spawn(function()
                 local dataEvent = game:GetService("ReplicatedStorage"):WaitForChild("BridgeNet2"):WaitForChild("dataRemoteEvent")
                 while arlecchinoKeyEnabled do
-                    local args = {
-                        { { Event = "CraftItem", Name = "HLKeyBeru" }, "\r" }
-                    }
+                    local args = { { { Event = "CraftItem", Name = "HLKeyBeru" }, "\r" } }
                     pcall(function() dataEvent:FireServer(unpack(args)) end)
                     task.wait(3)
                 end
@@ -316,17 +297,16 @@ player.CharacterAdded:Connect(function()
     if standDesertEnabled then safeStandAt(desertCFrame) end
 end)
 
--- =================== Auto-Restart on Portal Destroy ===================
+-- =================== Auto-Restart on Portal Destroyed ===================
 local function checkPortalDestroyed(tbl)
-    if type(tbl) == "table" then
-        for _, v in pairs(tbl) do
-            if type(v) == "table" then
-                checkPortalDestroyed(v)
-            elseif type(v) == "string" and v:upper():find("PORTAL DESTROYED") then
-                if autoRestartCastle then restartCastle() end
-                if autoRestartDesert then restartDesert() end
-                if autoRestartLabyrinth then restartLabyrinth() end
-            end
+    if type(tbl) ~= "table" then return end
+    for _, v in pairs(tbl) do
+        if type(v) == "table" then
+            checkPortalDestroyed(v)
+        elseif type(v) == "string" and v == "PORTAL DESTROYED" then
+            if autoRestartCastle then restartCastle() end
+            if autoRestartDesert then restartDesert() end
+            if autoRestartLabyrinth then restartLabyrinth() end
         end
     end
 end
