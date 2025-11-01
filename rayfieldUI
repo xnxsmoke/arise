@@ -26,7 +26,7 @@ local MiscTab = Window:CreateTab("Misc", 4483362458)
 local standCastleEnabled, standDesertEnabled, autoRestartCastle, autoRestartDesert = false, false, false, false
 local autoClickEnabled, waveSpeed2DesertEnabled, waveSpeed3DesertEnabled = false, false, false
 local autoRestartLabyrinth, speed1LabyrinthEnabled, speed2LabyrinthEnabled, speed3LabyrinthEnabled = false, false, false, false
-local arlecchinoKeyEnabled, joinedHospRaid = false, false
+local arlecchinoKeyEnabled, joinedHospRaid, autoBloodWeaponSwitch = false, false, false
 local standCemetryRushEnabled, autoRestartCemetryRush = false, false
 
 -- =================== Utility Functions ===================
@@ -107,7 +107,42 @@ LabTab:CreateToggle({ Name="Speed 3", CurrentValue=false, Flag="Speed3LabyrinthF
 
 -- =================== Misc ===================
 MiscTab:CreateToggle({ Name="Auto Click", CurrentValue=false, Flag="AutoClickFlag", Callback=function(v) autoClickEnabled=v if v then task.spawn(function() local WeaponsModule=require(ReplicatedStorage.SharedModules.WeaponsModule) while autoClickEnabled do task.wait(0.1) pcall(function() WeaponsModule.Click({KeyCode=Enum.KeyCode.ButtonX}, false, nil, true) end) end end) end end})
+
 MiscTab:CreateToggle({ Name="Arlecchino Key", CurrentValue=false, Flag="ArlecchinoKeyFlag", Callback=function(v) arlecchinoKeyEnabled=v if v then task.spawn(function() local dataEvent=ReplicatedStorage:WaitForChild("BridgeNet2"):WaitForChild("dataRemoteEvent") while arlecchinoKeyEnabled do local args={{{Event="CraftItem", Name="HLKeyBeru"},"\r"}} pcall(function() dataEvent:FireServer(unpack(args)) end) task.wait(3) end end) end end})
+
+-- 🔥 NEW FEATURE: Auto Blood Weapon Switch 🔥
+MiscTab:CreateToggle({
+    Name = "Auto Blood Weapon Switch",
+    CurrentValue = false,
+    Flag = "AutoBloodWeaponSwitchFlag",
+    Callback = function(v)
+        autoBloodWeaponSwitch = v
+        if v then
+            task.spawn(function()
+                while autoBloodWeaponSwitch do
+                    -- Passa a WEAP
+                    local toWeap = {
+                        {
+                            { Action = "Equip", Event = "Teams", TeamId = "ced2" },
+                            "\004"
+                        }
+                    }
+                    fireSafe(toWeap)
+                    task.wait(2) -- rimani 2 sec su WEAP
+                    -- Torna a DMG
+                    local toDmg = {
+                        {
+                            { Action = "Equip", Event = "Teams", TeamId = "f2ae" },
+                            "\004"
+                        }
+                    }
+                    fireSafe(toDmg)
+                    task.wait(15) -- torna a DMG per 15 sec
+                end
+            end)
+        end
+    end
+})
 
 -- =================== HospRaid ===================
 local function joinHospRaid()
