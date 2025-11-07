@@ -55,16 +55,16 @@ end
 
 local function speedUp(modeEvent, speed)
     local args = {
-        { { Speed = speed, Event = modeEvent, Action = "SpeedUp" }, "\004" }
+        { { Speed = speed, Event = modeEvent, Action = "SpeedUp" }, "\003" }
     }
     fireSafe(args)
 end
 
 -- =================== InfCastle ===================
 local function startCastle()
-    fireSafe({ { { Event = "InfiniteCastleAction", Action = "Create" }, "\004" } })
+    fireSafe({ { { Event = "InfiniteCastleAction", Action = "Create" }, "\003" } })
     task.wait(1)
-    fireSafe({ { { Dungeon = 3604563306, Event = "InfiniteCastleAction", Action = "Start" }, "\004" } })
+    fireSafe({ { { Dungeon = 3604563306, Event = "InfiniteCastleAction", Action = "Start" }, "\003" } })
     task.wait(1)
     if standCastleEnabled then safeStandAt(castleCFrame) end
 end
@@ -77,9 +77,9 @@ CastleTab:CreateToggle({ Name = "Wave Speed 3", CurrentValue=false, Flag="WaveSp
 
 -- =================== InfDesert ===================
 local function startDesert()
-    fireSafe({ { { Event = "InfiniteModeAction", Action = "Create" }, "\004" } })
+    fireSafe({ { { Event = "InfiniteModeAction", Action = "Create" }, "\003" } })
     task.wait(1)
-    fireSafe({ { { Dungeon = 3604563306, Event = "InfiniteModeAction", Action = "Start" }, "\004" } })
+    fireSafe({ { { Dungeon = 3604563306, Event = "InfiniteModeAction", Action = "Start" }, "\003" } })
     task.wait(1)
     if standDesertEnabled then safeStandAt(desertCFrame) end
 end
@@ -93,9 +93,9 @@ DesertTab:CreateToggle({ Name="Wave Speed 3", CurrentValue=false, Flag="WaveSpee
 
 -- =================== Infinite Labyrinth ===================
 local function startLabyrinth()
-    fireSafe({ { { Event="InfiniteLabyrinthAction", Action="Create" }, "\004" } })
+    fireSafe({ { { Event="InfiniteLabyrinthAction", Action="Create" }, "\003" } })
     task.wait(1)
-    fireSafe({ { { Dungeon=3604563306, Event="InfiniteLabyrinthAction", Action="Start" }, "\004" } })
+    fireSafe({ { { Dungeon=3604563306, Event="InfiniteLabyrinthAction", Action="Start" }, "\003" } })
 end
 local function restartLabyrinth() safeRejoin(startLabyrinth) end
 
@@ -110,7 +110,7 @@ MiscTab:CreateToggle({ Name="Auto Click", CurrentValue=false, Flag="AutoClickFla
 
 MiscTab:CreateToggle({ Name="Arlecchino Key", CurrentValue=false, Flag="ArlecchinoKeyFlag", Callback=function(v) arlecchinoKeyEnabled=v if v then task.spawn(function() local dataEvent=ReplicatedStorage:WaitForChild("BridgeNet2"):WaitForChild("dataRemoteEvent") while arlecchinoKeyEnabled do local args={{{Event="CraftItem", Name="HLKeyBeru"},"\r"}} pcall(function() dataEvent:FireServer(unpack(args)) end) task.wait(3) end end) end end})
 
--- 🔥 NEW FEATURE: Auto Blood Weapon Switch 🔥
+-- 🔥 Auto Blood Weapon Switch 🔥
 MiscTab:CreateToggle({
     Name = "Auto Blood Weapon Switch",
     CurrentValue = false,
@@ -124,20 +124,20 @@ MiscTab:CreateToggle({
                     local toWeap = {
                         {
                             { Action = "Equip", Event = "Teams", TeamId = "ced2" },
-                            "\004"
+                            "\003"
                         }
                     }
                     fireSafe(toWeap)
-                    task.wait(2) -- rimani 2 sec su WEAP
+                    task.wait(2)
                     -- Torna a DMG
                     local toDmg = {
                         {
                             { Action = "Equip", Event = "Teams", TeamId = "f2ae" },
-                            "\004"
+                            "\003"
                         }
                     }
                     fireSafe(toDmg)
-                    task.wait(15) -- torna a DMG per 15 sec
+                    task.wait(15)
                 end
             end)
         end
@@ -148,17 +148,17 @@ MiscTab:CreateToggle({
 local function joinHospRaid()
     if joinedHospRaid then return end
     joinedHospRaid = true
-    local args={{{Event="HLRaidAction",Action="Join"},"\004"}}
+    local args={{{Event="HLRaidAction",Action="Join"},"\003"}}
     fireSafe(args)
 end
 HospRaidTab:CreateToggle({ Name="Join HospRaid", CurrentValue=false, Flag="JoinHospRaidFlag", Callback=function(v) if v then joinHospRaid() end end})
 
 -- =================== CemetryRush ===================
 local function startCemetryRush()
-    local createArgs={{{Event="BossRushAction",Action="Create"},"\004"}}
+    local createArgs={{{Event="BossRushAction",Action="Create"},"\003"}}
     fireSafe(createArgs)
     task.wait(1)
-    local startArgs={{{Dungeon=3604563306,Action="Start",Diff="Hard",Event="BossRushAction"},"\004"}}
+    local startArgs={{{Dungeon=3604563306,Action="Start",Diff="Hard",Event="BossRushAction"},"\003"}}
     fireSafe(startArgs)
     if standCemetryRushEnabled then task.spawn(function() repeat task.wait(0.1) until player.Character and player.Character:FindFirstChild("HumanoidRootPart") safeStandAt(cemetryRushCFrame) end) end
 end
