@@ -131,7 +131,7 @@ LabTab:CreateToggle({ Name="Speed 3", CurrentValue=false, Flag="Speed3LabyrinthF
 
 --// Misc
 MiscTab:CreateToggle({
-    Name = "Auto Click (PunchAttack)",
+    Name = "Auto Click (PunchAttack, Fast)",
     CurrentValue = false,
     Flag = "AutoClickFlag",
     Callback = function(v)
@@ -139,23 +139,17 @@ MiscTab:CreateToggle({
         if v then
             task.spawn(function()
                 while autoClickEnabled do
-                    -- velocità massima: puoi ridurre ulteriormente il delay se il gioco lo regge
-                    task.wait(0.01)
+                    task.wait(0.01) -- velocità altissima (riduci a 0.005 se vuoi ancora più veloce)
                     local args = {
                         {
                             {
                                 Event = "PunchAttack",
                                 Enemy = "b0b7150ea58f45f19cb51136e05dd22e"
                             },
-                            "\005" -- chiave come nel tuo esempio
+                            dynamicKey -- usa la chiave dinamica, non fissa
                         }
                     }
-                    pcall(function()
-                        game:GetService("ReplicatedStorage")
-                            :WaitForChild("BridgeNet2")
-                            :WaitForChild("dataRemoteEvent")
-                            :FireServer(unpack(args))
-                    end)
+                    fireDynamic(args) -- usa la tua funzione già definita nello script
                 end
             end)
         end
