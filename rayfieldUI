@@ -148,22 +148,34 @@ MiscTab:CreateToggle({
     end
 })
 
--- Team switcher: dmg ↔ weap every 15s / 2s
+-- 🔥 NEW FEATURE: Auto Blood Weapon Switch 🔥
 MiscTab:CreateToggle({
-    Name="Auto Switch Team (dmg↔weap)",
-    CurrentValue=false,
-    Flag="TeamSwitchFlag",
-    Callback=function(v)
-        teamSwitchEnabled = v
+    Name = "Auto Blood Weapon Switch",
+    CurrentValue = false,
+    Flag = "AutoBloodWeaponSwitchFlag",
+    Callback = function(v)
+        autoBloodWeaponSwitch = v
         if v then
             task.spawn(function()
-                while teamSwitchEnabled do
-                    -- switch to weap
-                    fireDynamic({ { { Action="Equip", Event="Teams", TeamId="ced2" }, dynamicKey } })
-                    task.wait(15)
-                    -- back to dmg
-                    fireDynamic({ { { Action="Equip", Event="Teams", TeamId="f2ae" }, dynamicKey } })
-                    task.wait(2)
+                while autoBloodWeaponSwitch do
+                    -- Passa a WEAP
+                    local toWeap = {
+                        {
+                            { Action = "Equip", Event = "Teams", TeamId = "ced2" },
+                            "\004"
+                        }
+                    }
+                    fireSafe(toWeap)
+                    task.wait(2) -- rimani 2 sec su WEAP
+                    -- Torna a DMG
+                    local toDmg = {
+                        {
+                            { Action = "Equip", Event = "Teams", TeamId = "f2ae" },
+                            "\004"
+                        }
+                    }
+                    fireSafe(toDmg)
+                    task.wait(15) -- torna a DMG per 15 sec
                 end
             end)
         end
