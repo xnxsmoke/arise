@@ -194,7 +194,7 @@ HospRaidTab:CreateToggle({ Name="Join HospRaid", CurrentValue=false, Flag="JoinH
 local function startCemetryRush()
     fireDynamic({ { { Event="BossRushAction",Action="Create" }, dynamicKey } })
     task.wait(1)
-    fireDynamic({ { { Dungeon=3604563306,Action="Start",Diff="Hard",Event="BossRushAction" }, dynamicKey } })
+    fireDynamic({ { { Dungeon=3604563306,Action="Start",Diff="Insane",Event="BossRushAction" }, dynamicKey } })
     if standCemetryRushEnabled then safeStandAt(cemetryRushCFrame) end
 end
 local function restartCemetryRush() safeRejoin(startCemetryRush) end
