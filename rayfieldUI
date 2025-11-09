@@ -139,24 +139,24 @@ MiscTab:CreateToggle({
         if v then
             task.spawn(function()
                 while autoClickEnabled do
-                    task.wait(0.01) -- velocità altissima (riduci a 0.005 se vuoi ancora più veloce)
+                    task.wait(0.01)
                     local args = {
                         {
                             {
                                 Event = "PunchAttack",
                                 Enemy = "b0b7150ea58f45f19cb51136e05dd22e"
                             },
-                            dynamicKey -- usa la chiave dinamica, non fissa
+                            dynamicKey
                         }
                     }
-                    fireDynamic(args) -- usa la tua funzione già definita nello script
+                    fireDynamic(args)
                 end
             end)
         end
     end
 })
 
--- 🔥 NEW FEATURE: Auto Blood Weapon Switch 🔥
+-- Auto Blood Weapon Switch
 MiscTab:CreateToggle({
     Name = "Auto Blood Weapon Switch",
     CurrentValue = false,
@@ -166,7 +166,6 @@ MiscTab:CreateToggle({
         if v then
             task.spawn(function()
                 while autoBloodWeaponSwitch do
-                    -- Passa a WEAP
                     local toWeap = {
                         {
                             { Action = "Equip", Event = "Teams", TeamId = "ced2" },
@@ -174,8 +173,7 @@ MiscTab:CreateToggle({
                         }
                     }
                     fireSafe(toWeap)
-                    task.wait(2) -- rimani 2 sec su WEAP
-                    -- Torna a DMG
+                    task.wait(2)
                     local toDmg = {
                         {
                             { Action = "Equip", Event = "Teams", TeamId = "f2ae" },
@@ -183,7 +181,7 @@ MiscTab:CreateToggle({
                         }
                     }
                     fireSafe(toDmg)
-                    task.wait(15) -- torna a DMG per 15 sec
+                    task.wait(15)
                 end
             end)
         end
@@ -200,18 +198,39 @@ HospRaidTab:CreateToggle({ Name="Join HospRaid", CurrentValue=false, Flag="JoinH
 
 --// CemetryRush
 local cemetryRushDifficulty = "Insane"
+local useCemetryRushDifficulty = false
+local standCemetryRushEnabled, autoRestartCemetryRush = false, false
 
 local function startCemetryRush()
+    local diffToUse = useCemetryRushDifficulty and cemetryRushDifficulty or "Insane"
     fireDynamic({ { { Event="BossRushAction",Action="Create" }, dynamicKey } })
     task.wait(1)
-    fireDynamic({ { { Dungeon=3604563306,Action="Start",Diff=cemetryRushDifficulty,Event="BossRushAction" }, dynamicKey } })
+    fireDynamic({ { { Dungeon=3604563306, Action="Start", Diff=diffToUse, Event="BossRushAction" }, dynamicKey } })
     if standCemetryRushEnabled then safeStandAt(cemetryRushCFrame) end
 end
 local function restartCemetryRush() safeRejoin(startCemetryRush) end
 
+-- Bottoni e toggle UI (posizionati in fondo)
 CemetryRushTab:CreateButton({ Name="Start CemetryRush (Manual)", Callback=startCemetryRush })
 CemetryRushTab:CreateToggle({ Name="Stand in the Middle", CurrentValue=false, Flag="StandCemetryRushFlag", Callback=function(v) standCemetryRushEnabled=v if v then safeStandAt(cemetryRushCFrame) end end})
 CemetryRushTab:CreateToggle({ Name="Auto-Restart (on Rush Ended)", CurrentValue=false, Flag="AutoRestartCemetryRushFlag", Callback=function(v) autoRestartCemetryRush=v end})
+CemetryRushTab:CreateDropdown({
+    Name = "Select Difficulty",
+    Options = {"Easy", "Medium", "Hard", "Insane"},
+    CurrentOption = "Insane",
+    Flag = "CemetryRushDifficultyFlag",
+    Callback = function(option)
+        cemetryRushDifficulty = option
+    end
+})
+CemetryRushTab:CreateToggle({
+    Name = "Use Selected Difficulty",
+    CurrentValue = false,
+    Flag = "UseCemetryRushDifficultyFlag",
+    Callback = function(v)
+        useCemetryRushDifficulty = v
+    end
+})
 
 --// Respawn handler
 player.CharacterAdded:Connect(function()
