@@ -31,6 +31,7 @@ local autoClickEnabled, waveSpeed2DesertEnabled, waveSpeed3DesertEnabled = false
 local autoRestartLabyrinth, speed1LabyrinthEnabled, speed2LabyrinthEnabled, speed3LabyrinthEnabled = false, false, false, false
 local joinedHospRaid = false
 local standCemetryRushEnabled, autoRestartCemetryRush = false, false
+local waveSpeed3CastleEnabled = false
 local teamSwitchEnabled = false
 
 --// Utility Functions
@@ -61,6 +62,7 @@ local function safeRejoin(joinFunction)
     end)
 end
 
+--// SpeedUp Functions
 local function speedUpCastle(speed)
     local args = { { { Speed = speed, Event = "InfiniteCastleAction", Action = "SpeedUp" }, "\003" } }
     fireSafe(args)
@@ -77,43 +79,39 @@ local function speedUpLabyrinth(speed)
 end
 
 --// InfCastle
-local waveSpeed3CastleEnabled = false
-
 local function startCastle()
-    fireDynamic({ { { Event = "InfiniteCastleAction", Action = "Create" }, "\003" } })
+    local argsCreate = {
+        {
+            {
+                Event = "InfiniteCastleAction",
+                Action = "Create"
+            },
+            "\003"
+        }
+    }
+    dataRemoteEvent:FireServer(unpack(argsCreate))
     task.wait(1)
-    fireDynamic({ { { Dungeon = 3604563306, Event = "InfiniteCastleAction", Action = "Start" }, "\003" } })
+    local argsStart = {
+        {
+            {
+                Dungeon = 3604563306,
+                Event = "InfiniteCastleAction",
+                Action = "Start"
+            },
+            "\003"
+        }
+    }
+    dataRemoteEvent:FireServer(unpack(argsStart))
     task.wait(1)
     if standCastleEnabled then safeStandAt(castleCFrame) end
-    if waveSpeed3CastleEnabled then
-        speedUpCastle(3)
-    end
+    if waveSpeed3CastleEnabled then speedUpCastle(3) end
 end
-
-local function restartCastle()
-    safeRejoin(startCastle)
-end
+local function restartCastle() safeRejoin(startCastle) end
 
 CastleTab:CreateButton({ Name = "Start Infinite Castle (Manual)", Callback = startCastle })
 CastleTab:CreateToggle({ Name = "Stand in the Middle (InfCastle)", CurrentValue=false, Flag="StandCastleFlag", Callback=function(v) standCastleEnabled=v if v then safeStandAt(castleCFrame) end end})
 CastleTab:CreateToggle({ Name = "Auto-Restart (on Portal Destroyed)", CurrentValue=false, Flag="AutoRestartCastleFlag", Callback=function(v) autoRestartCastle=v end})
-CastleTab:CreateToggle({
-    Name = "Wave Speed 3",
-    CurrentValue=false,
-    Flag="WaveSpeed3Flag",
-    Callback=function(v)
-        waveSpeed3CastleEnabled = v
-        if v then
-            task.spawn(function()
-                repeat task.wait(0.1) until player.Character and player.Character:FindFirstChild("HumanoidRootPart")
-                while waveSpeed3CastleEnabled do
-                    speedUpCastle(3)
-                    task.wait(5)
-                end
-            end)
-        end
-    end
-})
+CastleTab:CreateToggle({ Name = "Wave Speed 3", CurrentValue=false, Flag="WaveSpeed3Flag", Callback=function(v) waveSpeed3CastleEnabled=v if v then task.spawn(function() repeat task.wait(0.1) until player.Character and player.Character:FindFirstChild("HumanoidRootPart") task.wait(2) speedUpCastle(3) end) end end})
 
 --// InfDesert
 local function startDesert()
@@ -156,7 +154,15 @@ MiscTab:CreateToggle({
             task.spawn(function()
                 while autoClickEnabled do
                     task.wait(0.01)
-                    local args = { { { Event = "PunchAttack", Enemy = "b0b7150ea58f45f19cb51136e05dd22e" }, "\004" } }
+                    local args = {
+                        {
+                            {
+                                Event = "PunchAttack",
+                                Enemy = "b0b7150ea58f45f19cb51136e05dd22e"
+                            },
+                            "\004"
+                        }
+                    }
                     fireDynamic(args)
                 end
             end)
@@ -173,9 +179,21 @@ MiscTab:CreateToggle({
         if v then
             task.spawn(function()
                 while autoBloodWeaponSwitch do
-                    fireSafe({ { { Action = "Equip", Event = "Teams", TeamId = "ced2" }, "\004" } })
+                    local toWeap = {
+                        {
+                            { Action = "Equip", Event = "Teams", TeamId = "ced2" },
+                            "\004"
+                        }
+                    }
+                    fireSafe(toWeap)
                     task.wait(2)
-                    fireSafe({ { { Action = "Equip", Event = "Teams", TeamId = "f2ae" }, "\004" } })
+                    local toDmg = {
+                        {
+                            { Action = "Equip", Event = "Teams", TeamId = "f2ae" },
+                            "\004"
+                        }
+                    }
+                    fireSafe(toDmg)
                     task.wait(15)
                 end
             end)
@@ -194,6 +212,7 @@ HospRaidTab:CreateToggle({ Name="Join HospRaid", CurrentValue=false, Flag="JoinH
 --// CemetryRush
 local cemetryRushDifficulty = "Insane"
 local useCemetryRushMode = false
+local standCemetryRushEnabled, autoRestartCemetryRush = false, false
 
 local function startCemetryRush()
     if not useCemetryRushMode then return end
@@ -206,9 +225,31 @@ local function restartCemetryRush() safeRejoin(startCemetryRush) end
 
 CemetryRushTab:CreateButton({ Name="Start CemetryRush (Manual)", Callback=startCemetryRush })
 CemetryRushTab:CreateToggle({ Name="Stand in the Middle", CurrentValue=false, Flag="StandCemetryRushFlag", Callback=function(v) standCemetryRushEnabled=v if v then safeStandAt(cemetryRushCFrame) end end})
-CemetryRushTab:CreateDropdown({ Name = "Select Difficulty", Options = {"Easy", "Medium", "Hard", "Insane"}, CurrentOption = "Insane", Flag = "CemetryRushDifficultyFlag", Callback = function(option) cemetryRushDifficulty = option end })
-CemetryRushTab:CreateToggle({ Name = "Activate Selected Difficulty", CurrentValue=false, Flag = "UseCemetryRushDifficultyFlag", Callback = function(v) useCemetryRushMode = v end })
-CemetryRushTab:CreateToggle({ Name="Auto-Restart (on Rush Ended)", CurrentValue=false, Flag="AutoRestartCemetryRushFlag", Callback=function(v) autoRestartCemetryRush=v end})
+CemetryRushTab:CreateDropdown({
+    Name = "Select Difficulty",
+    Options = {"Easy", "Medium", "Hard", "Insane"},
+    CurrentOption = "Insane",
+    Flag = "CemetryRushDifficultyFlag",
+    Callback = function(option)
+        cemetryRushDifficulty = option
+    end
+})
+CemetryRushTab:CreateToggle({
+    Name = "Activate Selected Difficulty",
+    CurrentValue=false,
+    Flag = "UseCemetryRushDifficultyFlag",
+    Callback = function(v)
+        useCemetryRushMode = v
+    end
+})
+CemetryRushTab:CreateToggle({
+    Name = "Auto-Restart (on Rush Ended)",
+    CurrentValue=false,
+    Flag="AutoRestartCemetryRushFlag",
+    Callback=function(v)
+        autoRestartCemetryRush=v
+    end
+})
 
 --// Respawn handler
 player.CharacterAdded:Connect(function()
