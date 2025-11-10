@@ -5,8 +5,8 @@ local player = Players.LocalPlayer
 local dataRemoteEvent = ReplicatedStorage:WaitForChild("BridgeNet2"):WaitForChild("dataRemoteEvent")
 
 --// Key overrides per modalità specifiche
-local KEY_INFCASTLE = "\003"  -- InfCastle
-local KEY_DEFAULT = "\004"    -- Tutte le altre modalità
+local KEY_INFCASTLE = "\003"  -- Usata SOLO per lo SpeedUp di InfCastle
+local KEY_DEFAULT = "\004"    -- Usata per tutte le altre azioni (Create/Start ecc.)
 
 --// Positions
 local castleCFrame = CFrame.new(432.6329, 4384.6372, -1898.6741)
@@ -66,6 +66,7 @@ local function safeRejoin(joinFunction)
 end
 
 --// SpeedUp Functions
+-- NOTE: InfCastle uses KEY_INFCASTLE only for SpeedUp
 local function speedUpCastle(speed)
     local args = { { { Speed = speed, Event = "InfiniteCastleAction", Action = "SpeedUp" }, KEY_INFCASTLE } }
     fireSafe(args)
@@ -83,9 +84,10 @@ end
 
 --// InfCastle
 local function startCastle()
-    fireDynamic({ { { Event = "InfiniteCastleAction", Action = "Create" }, KEY_INFCASTLE } })
+    -- Create/Start usano KEY_DEFAULT, non KEY_INFCASTLE
+    fireDynamic({ { { Event = "InfiniteCastleAction", Action = "Create" }, KEY_DEFAULT } })
     task.wait(1)
-    fireDynamic({ { { Dungeon = 3604563306, Event = "InfiniteCastleAction", Action = "Start" }, KEY_INFCASTLE } })
+    fireDynamic({ { { Dungeon = 3604563306, Event = "InfiniteCastleAction", Action = "Start" }, KEY_DEFAULT } })
     task.wait(1)
     if standCastleEnabled then safeStandAt(castleCFrame) end
 end
