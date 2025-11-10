@@ -84,14 +84,44 @@ end
 
 --// InfCastle
 local function startCastle()
-    -- Create/Start usano KEY_DEFAULT, non KEY_INFCASTLE
-    fireDynamic({ { { Event = "InfiniteCastleAction", Action = "Create" }, KEY_DEFAULT } })
+    -- Create
+    local createArgs = {
+        {
+            { Event = "InfiniteCastleAction", Action = "Create" },
+            KEY_INFCASTLE
+        }
+    }
+    fireDynamic(createArgs)
     task.wait(1)
-    fireDynamic({ { { Dungeon = 3604563306, Event = "InfiniteCastleAction", Action = "Start" }, KEY_DEFAULT } })
+
+    -- Start
+    local startArgs = {
+        {
+            { Dungeon = 3604563306, Event = "InfiniteCastleAction", Action = "Start" },
+            KEY_INFCASTLE
+        }
+    }
+    fireDynamic(startArgs)
     task.wait(1)
-    if standCastleEnabled then safeStandAt(castleCFrame) end
+
+    -- Stand in the middle
+    if standCastleEnabled then
+        safeStandAt(castleCFrame)
+    end
+
+    -- Riapplica Wave Speed 3 se attivo
+    if CastleTab.Flags["WaveSpeed3Flag"].Value then
+        task.spawn(function()
+            repeat task.wait(0.1) until player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+            task.wait(2)
+            speedUpCastle(3)
+        end)
+    end
 end
-local function restartCastle() safeRejoin(startCastle) end
+
+local function restartCastle()
+    safeRejoin(startCastle)
+end
 
 CastleTab:CreateButton({ Name = "Start Infinite Castle (Manual)", Callback = startCastle })
 CastleTab:CreateToggle({ Name = "Stand in the Middle (InfCastle)", CurrentValue=false, Flag="StandCastleFlag", Callback=function(v) standCastleEnabled=v if v then safeStandAt(castleCFrame) end end})
