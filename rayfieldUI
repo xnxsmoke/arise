@@ -31,7 +31,6 @@ local autoClickEnabled, waveSpeed2DesertEnabled, waveSpeed3DesertEnabled = false
 local autoRestartLabyrinth, speed1LabyrinthEnabled, speed2LabyrinthEnabled, speed3LabyrinthEnabled = false, false, false, false
 local joinedHospRaid = false
 local standCemetryRushEnabled, autoRestartCemetryRush = false, false
-local waveSpeed3CastleEnabled = false
 local teamSwitchEnabled = false
 
 --// Utility Functions
@@ -63,55 +62,28 @@ local function safeRejoin(joinFunction)
 end
 
 --// SpeedUp Functions
-local function speedUpCastle(speed)
-    local args = { { { Speed = speed, Event = "InfiniteCastleAction", Action = "SpeedUp" }, "\003" } }
-    fireSafe(args)
-end
-
-local function speedUpDesert(speed)
-    local args = { { { Speed = speed, Event = "InfiniteModeAction", Action = "SpeedUp" }, "\004" } }
-    fireSafe(args)
-end
-
-local function speedUpLabyrinth(speed)
-    local args = { { { Speed = speed, Event = "InfiniteLabyrinthAction", Action = "SpeedUp" }, "\004" } }
+local function speedUp(modeEvent, speed)
+    local key = modeEvent == "InfiniteCastleAction" and "\003" or "\004"
+    local args = { { { Speed = speed, Event = modeEvent, Action = "SpeedUp" }, key } }
     fireSafe(args)
 end
 
 --// InfCastle
 local function startCastle()
-    local argsCreate = {
-        {
-            {
-                Event = "InfiniteCastleAction",
-                Action = "Create"
-            },
-            "\003"
-        }
-    }
-    dataRemoteEvent:FireServer(unpack(argsCreate))
+    local argsCreate = { { { Event = "InfiniteCastleAction", Action = "Create" }, "\003" } }
+    fireDynamic(argsCreate)
     task.wait(1)
-    local argsStart = {
-        {
-            {
-                Dungeon = 3604563306,
-                Event = "InfiniteCastleAction",
-                Action = "Start"
-            },
-            "\003"
-        }
-    }
-    dataRemoteEvent:FireServer(unpack(argsStart))
+    local argsStart = { { { Dungeon = 3604563306, Event = "InfiniteCastleAction", Action = "Start" }, "\003" } }
+    fireDynamic(argsStart)
     task.wait(1)
     if standCastleEnabled then safeStandAt(castleCFrame) end
-    if waveSpeed3CastleEnabled then speedUpCastle(3) end
 end
 local function restartCastle() safeRejoin(startCastle) end
 
 CastleTab:CreateButton({ Name = "Start Infinite Castle (Manual)", Callback = startCastle })
 CastleTab:CreateToggle({ Name = "Stand in the Middle (InfCastle)", CurrentValue=false, Flag="StandCastleFlag", Callback=function(v) standCastleEnabled=v if v then safeStandAt(castleCFrame) end end})
 CastleTab:CreateToggle({ Name = "Auto-Restart (on Portal Destroyed)", CurrentValue=false, Flag="AutoRestartCastleFlag", Callback=function(v) autoRestartCastle=v end})
-CastleTab:CreateToggle({ Name = "Wave Speed 3", CurrentValue=false, Flag="WaveSpeed3Flag", Callback=function(v) waveSpeed3CastleEnabled=v if v then task.spawn(function() repeat task.wait(0.1) until player.Character and player.Character:FindFirstChild("HumanoidRootPart") task.wait(2) speedUpCastle(3) end) end end})
+CastleTab:CreateToggle({ Name = "Wave Speed 3", CurrentValue=false, Flag="WaveSpeed3Flag", Callback=function(v) if v then task.spawn(function() repeat task.wait(0.1) until player.Character and player.Character:FindFirstChild("HumanoidRootPart") task.wait(2) speedUp("InfiniteCastleAction",3) end) end end})
 
 --// InfDesert
 local function startDesert()
@@ -126,8 +98,8 @@ local function restartDesert() safeRejoin(startDesert) end
 DesertTab:CreateButton({ Name = "Start Infinite Desert (Manual)", Callback=startDesert })
 DesertTab:CreateToggle({ Name="Stand in the Middle (InfDesert)", CurrentValue=false, Flag="StandDesertFlag", Callback=function(v) standDesertEnabled=v if v then safeStandAt(desertCFrame) end end})
 DesertTab:CreateToggle({ Name="Auto-Restart (on Portal Destroyed)", CurrentValue=false, Flag="AutoRestartDesertFlag", Callback=function(v) autoRestartDesert=v end})
-DesertTab:CreateToggle({ Name="Wave Speed 2", CurrentValue=false, Flag="WaveSpeed2DesertFlag", Callback=function(v) if v then task.spawn(function() repeat task.wait(0.1) until player.Character and player.Character:FindFirstChild("HumanoidRootPart") task.wait(2) speedUpDesert(2) end) end end})
-DesertTab:CreateToggle({ Name="Wave Speed 3", CurrentValue=false, Flag="WaveSpeed3DesertFlag", Callback=function(v) if v then task.spawn(function() repeat task.wait(0.1) until player.Character and player.Character:FindFirstChild("HumanoidRootPart") task.wait(2) speedUpDesert(3) end) end end})
+DesertTab:CreateToggle({ Name="Wave Speed 2", CurrentValue=false, Flag="WaveSpeed2DesertFlag", Callback=function(v) if v then task.spawn(function() repeat task.wait(0.1) until player.Character and player.Character:FindFirstChild("HumanoidRootPart") task.wait(2) speedUp("InfiniteModeAction",2) end) end end})
+DesertTab:CreateToggle({ Name="Wave Speed 3", CurrentValue=false, Flag="WaveSpeed3DesertFlag", Callback=function(v) if v then task.spawn(function() repeat task.wait(0.1) until player.Character and player.Character:FindFirstChild("HumanoidRootPart") task.wait(2) speedUp("InfiniteModeAction",3) end) end end})
 
 --// Infinite Labyrinth
 local function startLabyrinth()
@@ -139,9 +111,9 @@ local function restartLabyrinth() safeRejoin(startLabyrinth) end
 
 LabTab:CreateButton({ Name="Start Infinite Labyrinth (Manual)", Callback=startLabyrinth })
 LabTab:CreateToggle({ Name="Auto-Restart (on Portal Destroyed)", CurrentValue=false, Flag="AutoRestartLabyrinthFlag", Callback=function(v) autoRestartLabyrinth=v end})
-LabTab:CreateToggle({ Name="Speed 1", CurrentValue=false, Flag="Speed1LabyrinthFlag", Callback=function(v) if v then speedUpLabyrinth(1) end end})
-LabTab:CreateToggle({ Name="Speed 2", CurrentValue=false, Flag="Speed2LabyrinthFlag", Callback=function(v) if v then speedUpLabyrinth(2) end end})
-LabTab:CreateToggle({ Name="Speed 3", CurrentValue=false, Flag="Speed3LabyrinthFlag", Callback=function(v) if v then speedUpLabyrinth(3) end end})
+LabTab:CreateToggle({ Name="Speed 1", CurrentValue=false, Flag="Speed1LabyrinthFlag", Callback=function(v) if v then speedUp("InfiniteLabyrinthAction",1) end end})
+LabTab:CreateToggle({ Name="Speed 2", CurrentValue=false, Flag="Speed2LabyrinthFlag", Callback=function(v) if v then speedUp("InfiniteLabyrinthAction",2) end end})
+LabTab:CreateToggle({ Name="Speed 3", CurrentValue=false, Flag="Speed3LabyrinthFlag", Callback=function(v) if v then speedUp("InfiniteLabyrinthAction",3) end end})
 
 --// Misc
 MiscTab:CreateToggle({
@@ -179,20 +151,10 @@ MiscTab:CreateToggle({
         if v then
             task.spawn(function()
                 while autoBloodWeaponSwitch do
-                    local toWeap = {
-                        {
-                            { Action = "Equip", Event = "Teams", TeamId = "ced2" },
-                            "\004"
-                        }
-                    }
+                    local toWeap = { { { Action = "Equip", Event = "Teams", TeamId = "ced2" }, "\004" } }
                     fireSafe(toWeap)
                     task.wait(2)
-                    local toDmg = {
-                        {
-                            { Action = "Equip", Event = "Teams", TeamId = "f2ae" },
-                            "\004"
-                        }
-                    }
+                    local toDmg = { { { Action = "Equip", Event = "Teams", TeamId = "f2ae" }, "\004" } }
                     fireSafe(toDmg)
                     task.wait(15)
                 end
