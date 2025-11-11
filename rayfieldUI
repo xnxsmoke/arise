@@ -4,12 +4,13 @@ local Players = game:GetService("Players")
 local player = Players.LocalPlayer
 local dataRemoteEvent = ReplicatedStorage:WaitForChild("BridgeNet2"):WaitForChild("dataRemoteEvent")
 
+local KEY = "\003"
+
 -- Positions
 local castleCFrame = CFrame.new(432.6329, 4384.6372, -1898.6741)
 local desertCFrame = CFrame.new(463.8988, 4383.7646, -1888.2440)
-local cemetryRushCFrame = CFrame.new(214.981415, 1594.494141, -4312.195801)
 
--- Window
+-- UI
 local Window = Rayfield:CreateWindow({
     Name = "xnxsmoke Hub",
     LoadingTitle = "xnxsmoke Loader",
@@ -17,22 +18,16 @@ local Window = Rayfield:CreateWindow({
     ConfigurationSaving = { Enabled = true, FileName = "InfiniteModesHub", AutoSave = true },
 })
 
--- Tabs
 local CastleTab = Window:CreateTab("InfCastle", 4483362458)
 local DesertTab = Window:CreateTab("InfDesert", 4483362458)
-local LabTab = Window:CreateTab("InfLab", 4483362458)
-local HospRaidTab = Window:CreateTab("HospRaid", 4483362458)
-local CemetryRushTab = Window:CreateTab("CemetryRush", 4483362458)
-local MiscTab = Window:CreateTab("Misc", 4483362458)
 
 -- Variables
-local standCastleEnabled, standDesertEnabled, autoRestartCastle, autoRestartDesert = false, false, false, false
-local autoClickEnabled = false
-local autoRestartLabyrinth = false
-local joinedHospRaid = false
-local standCemetryRushEnabled, autoRestartCemetryRush = false, false
-local useCastleCheckpoint, useDesertCheckpoint = false, false
-local castleCheckpoint, desertCheckpoint = "30", "30"
+local standCastleEnabled, autoRestartCastle = false, false
+local standDesertEnabled, autoRestartDesert = false, false
+local waveCastle = 1
+local waveDesert = 1
+local checkpointCastle = 0
+local checkpointDesert = 0
 
 -- Utility
 local function safeStandAt(cf)
@@ -42,7 +37,7 @@ local function safeStandAt(cf)
     end
 end
 
-local function fireDynamic(args)
+local function fire(args)
     pcall(function() dataRemoteEvent:FireServer(unpack(args)) end)
 end
 
@@ -58,158 +53,109 @@ local function safeRejoin(joinFunction)
     end)
 end
 
-local function speedUp(modeEvent, speed)
-    local args = { { { Speed = speed, Event = modeEvent, Action = "SpeedUp" }, "\003" } }
-    fireDynamic(args)
+local function speedUpCastle(speed)
+    fire({{{Speed=speed, Event="InfiniteCastleAction", Action="SpeedUp"}, KEY}})
+end
+
+local function speedUpDesert(speed)
+    fire({{{Speed=speed, Event="InfiniteModeAction", Action="SpeedUp"}, KEY}})
 end
 
 -- InfCastle
 local function startCastle()
-    fireDynamic({ { { Event = "InfiniteCastleAction", Action = "Create" }, "\003" } })
+    fire({{{Event="InfiniteCastleAction", Action="Create"}, KEY}})
     task.wait(1)
-    local argsStart = { { { Dungeon = 3604563306, Event = "InfiniteCastleAction", Action = "Start" }, "\003" } }
-    if useCastleCheckpoint and castleCheckpoint ~= "0" then
-        argsStart[1][1].Check = castleCheckpoint
+    local startArgs = {
+        {
+            {
+                Action="Start",
+                Event="InfiniteCastleAction",
+                Dungeon=3604563306
+            },
+            KEY
+        }
+    }
+    if checkpointCastle > 0 then
+        startArgs[1][1].Check = tostring(checkpointCastle)
     end
-    fireDynamic(argsStart)
+    fire(startArgs)
+    task.wait(1)
     if standCastleEnabled then safeStandAt(castleCFrame) end
+    speedUpCastle(waveCastle)
 end
-local function restartCastle() safeRejoin(startCastle) end
 
-CastleTab:CreateButton({ Name = "Start Infinite Castle (Manual)", Callback = startCastle })
-CastleTab:CreateToggle({ Name = "Stand in the Middle", CurrentValue=false, Flag="StandCastleFlag", Callback=function(v) standCastleEnabled=v if v then safeStandAt(castleCFrame) end end})
+local function restartCastle()
+    safeRejoin(startCastle)
+end
+
+CastleTab:CreateButton({Name="Start InfCastle", Callback=startCastle})
+CastleTab:CreateToggle({Name="Stand in Middle", CurrentValue=false, Flag="StandCastleFlag", Callback=function(v) standCastleEnabled=v if v then safeStandAt(castleCFrame) end end})
 CastleTab:CreateDropdown({
-    Name = "Select Checkpoint",
-    Options = {"0","30","60","90","120","150","180","210","240","270","300","330","360","390","420"},
-    CurrentOption = "30",
-    Flag = "CastleCheckpointFlag",
-    Callback = function(option) castleCheckpoint = option end
+    Name="Wave",
+    Options={"1","2","3"},
+    CurrentOption="1",
+    Flag="WaveCastleFlag",
+    Callback=function(v) waveCastle = tonumber(v) end
 })
-CastleTab:CreateToggle({ Name="Use Checkpoint", CurrentValue=true, Flag="UseCastleCheckpointFlag", Callback=function(v) useCastleCheckpoint=v end})
-CastleTab:CreateToggle({ Name = "Auto-Restart", CurrentValue=false, Flag="AutoRestartCastleFlag", Callback=function(v) autoRestartCastle=v end})
 CastleTab:CreateDropdown({
-    Name = "Wave Speed",
-    Options = {"1","2","3"},
-    CurrentOption = "3",
-    Flag = "CastleWaveSpeedFlag",
-    Callback = function(option)
-        task.spawn(function()
-            repeat task.wait(0.1) until player.Character and player.Character:FindFirstChild("HumanoidRootPart")
-            speedUp("InfiniteCastleAction", tonumber(option))
-        end)
-    end
+    Name="Checkpoint",
+    Options={"0","30","60","90","120","150","180","210","240","270","300","330","360","390","420"},
+    CurrentOption="0",
+    Flag="CheckpointCastleFlag",
+    Callback=function(v) checkpointCastle = tonumber(v) end
 })
+CastleTab:CreateToggle({Name="Auto-Restart", CurrentValue=false, Flag="AutoRestartCastleFlag", Callback=function(v) autoRestartCastle=v end})
 
 -- InfDesert
 local function startDesert()
-    fireDynamic({ { { Event = "InfiniteModeAction", Action = "Create" }, "\003" } })
+    fire({{{Event="InfiniteModeAction", Action="Create"}, KEY}})
     task.wait(1)
-    local argsStart = { { { Dungeon = 3604563306, Event = "InfiniteModeAction", Action = "Start" }, "\003" } }
-    if useDesertCheckpoint and desertCheckpoint ~= "0" then
-        argsStart[1][1].Check = desertCheckpoint
+    local startArgs = {
+        {
+            {
+                Action="Start",
+                Event="InfiniteModeAction",
+                Dungeon=3604563306
+            },
+            KEY
+        }
+    }
+    if checkpointDesert > 0 then
+        startArgs[1][1].Check = tostring(checkpointDesert)
     end
-    fireDynamic(argsStart)
+    fire(startArgs)
+    task.wait(1)
     if standDesertEnabled then safeStandAt(desertCFrame) end
+    speedUpDesert(waveDesert)
 end
-local function restartDesert() safeRejoin(startDesert) end
 
-DesertTab:CreateButton({ Name = "Start Infinite Desert (Manual)", Callback = startDesert })
-DesertTab:CreateToggle({ Name="Stand in the Middle", CurrentValue=false, Flag="StandDesertFlag", Callback=function(v) standDesertEnabled=v if v then safeStandAt(desertCFrame) end end})
+local function restartDesert()
+    safeRejoin(startDesert)
+end
+
+DesertTab:CreateButton({Name="Start InfDesert", Callback=startDesert})
+DesertTab:CreateToggle({Name="Stand in Middle", CurrentValue=false, Flag="StandDesertFlag", Callback=function(v) standDesertEnabled=v if v then safeStandAt(desertCFrame) end end})
 DesertTab:CreateDropdown({
-    Name = "Select Checkpoint",
-    Options = {"0","30","60","90","120","150","180","210","240","270","300","330","360","390","420"},
-    CurrentOption = "30",
-    Flag = "DesertCheckpointFlag",
-    Callback = function(option) desertCheckpoint = option end
+    Name="Wave",
+    Options={"1","2","3"},
+    CurrentOption="1",
+    Flag="WaveDesertFlag",
+    Callback=function(v) waveDesert = tonumber(v) end
 })
-DesertTab:CreateToggle({ Name="Use Checkpoint", CurrentValue=true, Flag="UseDesertCheckpointFlag", Callback=function(v) useDesertCheckpoint=v end})
-DesertTab:CreateToggle({ Name = "Auto-Restart", CurrentValue=false, Flag="AutoRestartDesertFlag", Callback=function(v) autoRestartDesert=v end})
 DesertTab:CreateDropdown({
-    Name = "Wave Speed",
-    Options = {"1","2","3"},
-    CurrentOption = "3",
-    Flag = "DesertWaveSpeedFlag",
-    Callback = function(option)
-        task.spawn(function()
-            repeat task.wait(0.1) until player.Character and player.Character:FindFirstChild("HumanoidRootPart")
-            speedUp("InfiniteModeAction", tonumber(option))
-        end)
-    end
+    Name="Checkpoint",
+    Options={"0","30","60","90","120","150","180","210","240","270","300","330","360","390","420"},
+    CurrentOption="0",
+    Flag="CheckpointDesertFlag",
+    Callback=function(v) checkpointDesert = tonumber(v) end
 })
+DesertTab:CreateToggle({Name="Auto-Restart", CurrentValue=false, Flag="AutoRestartDesertFlag", Callback=function(v) autoRestartDesert=v end})
 
--- Infinite Labyrinth
-local function startLabyrinth()
-    fireDynamic({ { { Event="InfiniteLabyrinthAction", Action="Create" }, "\003" } })
-    task.wait(1)
-    fireDynamic({ { { Dungeon=3604563306, Event="InfiniteLabyrinthAction", Action="Start" }, "\003" } })
-end
-local function restartLabyrinth() safeRejoin(startLabyrinth) end
-
-LabTab:CreateButton({ Name="Start Infinite Labyrinth (Manual)", Callback=startLabyrinth })
-LabTab:CreateToggle({ Name="Auto-Restart", CurrentValue=false, Flag="AutoRestartLabyrinthFlag", Callback=function(v) autoRestartLabyrinth=v end})
-LabTab:CreateDropdown({
-    Name = "Speed",
-    Options = {"1","2","3"},
-    CurrentOption = "3",
-    Flag = "LabyrinthSpeedFlag",
-    Callback = function(option)
-        task.spawn(function()
-            repeat task.wait(0.1) until player.Character and player.Character:FindFirstChild("HumanoidRootPart")
-            speedUp("InfiniteLabyrinthAction", tonumber(option))
-        end)
-    end
-})
-
--- Misc
-MiscTab:CreateToggle({
-    Name = "Auto Click",
-    CurrentValue = false,
-    Flag = "AutoClickFlag",
-    Callback = function(v)
-        autoClickEnabled = v
-        if v then
-            task.spawn(function()
-                while autoClickEnabled do
-                    task.wait(0.01)
-                    fireDynamic({ { { Event = "PunchAttack", Enemy = "b0b7150ea58f45f19cb51136e05dd22e" }, "\003" } })
-                end
-            end)
-        end
-    end
-})
-
--- CemetryRush & Boss
-local cemetryRushDifficulty = "Insane"
-local useCemetryRushMode = false
-local standCemetryRushEnabled, autoRestartCemetryRush = false, false
-
-local function startCemetryRush()
-    if not useCemetryRushMode then return end
-    fireDynamic({ { { Event="BossRushAction", Action="Create" }, "\003" } })
-    task.wait(1)
-    fireDynamic({ { { Dungeon=3604563306, Action="Start", Diff=cemetryRushDifficulty, Event="BossRushAction" }, "\003" } })
-    if standCemetryRushEnabled then safeStandAt(cemetryRushCFrame) end
-end
-local function restartCemetryRush() safeRejoin(startCemetryRush) end
-
-CemetryRushTab:CreateButton({ Name="Start CemetryRush (Manual)", Callback=startCemetryRush })
-CemetryRushTab:CreateToggle({ Name="Stand in the Middle", CurrentValue=false, Flag="StandCemetryRushFlag", Callback=function(v) standCemetryRushEnabled=v if v then safeStandAt(cemetryRushCFrame) end end})
-CemetryRushTab:CreateDropdown({
-    Name = "Select Difficulty",
-    Options = {"Easy","Medium","Hard","Insane"},
-    CurrentOption = "Insane",
-    Flag = "CemetryRushDifficultyFlag",
-    Callback = function(option) cemetryRushDifficulty = option end
-})
-CemetryRushTab:CreateToggle({ Name="Activate Selected Difficulty", CurrentValue=false, Flag="UseCemetryRushDifficultyFlag", Callback=function(v) useCemetryRushMode=v end})
-CemetryRushTab:CreateToggle({ Name="Auto-Restart", CurrentValue=false, Flag="AutoRestartCemetryRushFlag", Callback=function(v) autoRestartCemetryRush=v end})
-
--- Respawn handler
+-- Respawn
 player.CharacterAdded:Connect(function()
     task.wait(1)
     if standCastleEnabled then safeStandAt(castleCFrame) end
     if standDesertEnabled then safeStandAt(desertCFrame) end
-    if standCemetryRushEnabled then safeStandAt(cemetryRushCFrame) end
 end)
 
 -- Restart detection
@@ -223,9 +169,6 @@ dataRemoteEvent.OnClientEvent:Connect(function(...)
                 if msg:find("PORTAL DESTROYED") then
                     if autoRestartCastle then restartCastle() end
                     if autoRestartDesert then restartDesert() end
-                    if autoRestartLabyrinth then restartLabyrinth() end
-                elseif msg:find("RUSH ENDED") then
-                    if autoRestartCemetryRush then restartCemetryRush() end
                 end
             end
         end
@@ -233,5 +176,4 @@ dataRemoteEvent.OnClientEvent:Connect(function(...)
     for _,v in ipairs({...}) do recursiveCheck(v) end
 end)
 
--- Load Configuration
 Rayfield:LoadConfiguration("InfiniteModesHub")
