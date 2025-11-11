@@ -4,10 +4,6 @@ local Players = game:GetService("Players")
 local player = Players.LocalPlayer
 local dataRemoteEvent = ReplicatedStorage:WaitForChild("BridgeNet2"):WaitForChild("dataRemoteEvent")
 
---// Key overrides per modalità specifiche
-local KEY_INFCASTLE = "\003"  -- Usata SOLO per lo SpeedUp di InfCastle
-local KEY_DEFAULT = "\004"    -- Usata per tutte le altre azioni (Create/Start ecc.)
-
 --// Positions
 local castleCFrame = CFrame.new(432.6329, 4384.6372, -1898.6741)
 local desertCFrame = CFrame.new(463.8988, 4383.7646, -1888.2440)
@@ -36,8 +32,10 @@ local autoRestartLabyrinth, speed1LabyrinthEnabled, speed2LabyrinthEnabled, spee
 local joinedHospRaid = false
 local standCemetryRushEnabled, autoRestartCemetryRush = false, false
 local teamSwitchEnabled = false
+local cemetryRushDifficulty = "Insane"
+local useCemetryRushMode = false
 
---// Utility Functions
+--// Utility
 local function safeStandAt(cf)
     local char = player.Character
     if char and char:FindFirstChild("HumanoidRootPart") then
@@ -46,10 +44,6 @@ local function safeStandAt(cf)
 end
 
 local function fireSafe(args)
-    pcall(function() dataRemoteEvent:FireServer(unpack(args)) end)
-end
-
-local function fireDynamic(args)
     pcall(function() dataRemoteEvent:FireServer(unpack(args)) end)
 end
 
@@ -65,66 +59,19 @@ local function safeRejoin(joinFunction)
     end)
 end
 
---// SpeedUp Functions
-local function speedUpCastle(speed)
-    local args = { { { Speed = speed, Event = "InfiniteCastleAction", Action = "SpeedUp" }, KEY_INFCASTLE } }
-    fireSafe(args)
-end
-
-local function speedUpDesert(speed)
-    local args = { { { Speed = speed, Event = "InfiniteModeAction", Action = "SpeedUp" }, KEY_DEFAULT } }
-    fireSafe(args)
-end
-
-local function speedUpLabyrinth(speed)
-    local args = { { { Speed = speed, Event = "InfiniteLabyrinthAction", Action = "SpeedUp" }, KEY_DEFAULT } }
-    fireSafe(args)
-end
-
 --// InfCastle
 local function startCastle()
-    local createArgs = {
-        {
-            { Event = "InfiniteCastleAction", Action = "Create" },
-            KEY_INFCASTLE
-        }
-    }
-    fireDynamic(createArgs)
+    fireSafe({ { { Event = "InfiniteCastleAction", Action = "Create" }, "\003" } })
     task.wait(1)
-    local startArgs = {
-        {
-            { Dungeon = 3604563306, Event = "InfiniteCastleAction", Action = "Start" },
-            KEY_INFCASTLE
-        }
-    }
-    fireDynamic(startArgs)
+    fireSafe({ { { Dungeon = 3604563306, Event = "InfiniteCastleAction", Action = "Start" }, "\003" } })
     task.wait(1)
     if standCastleEnabled then safeStandAt(castleCFrame) end
 end
-
 local function restartCastle() safeRejoin(startCastle) end
 
-CastleTab:CreateButton({
-    Name = "Start Infinite Castle (Manual)",
-    Callback = startCastle
-})
-CastleTab:CreateToggle({
-    Name = "Stand in the Middle (InfCastle)",
-    CurrentValue = false,
-    Flag = "StandCastleFlag",
-    Callback = function(v)
-        standCastleEnabled = v
-        if v then safeStandAt(castleCFrame) end
-    end
-})
-CastleTab:CreateToggle({
-    Name = "Auto-Restart (on Portal Destroyed)",
-    CurrentValue = false,
-    Flag = "AutoRestartCastleFlag",
-    Callback = function(v)
-        autoRestartCastle = v
-    end
-})
+CastleTab:CreateButton({ Name = "Start Infinite Castle (Manual)", Callback = startCastle })
+CastleTab:CreateToggle({ Name = "Stand in the Middle (InfCastle)", CurrentValue=false, Flag="StandCastleFlag", Callback=function(v) standCastleEnabled=v if v then safeStandAt(castleCFrame) end end})
+CastleTab:CreateToggle({ Name = "Auto-Restart (on Portal Destroyed)", CurrentValue=false, Flag="AutoRestartCastleFlag", Callback=function(v) autoRestartCastle=v end})
 CastleTab:CreateToggle({
     Name = "Wave Speed 3",
     CurrentValue = false,
@@ -132,9 +79,12 @@ CastleTab:CreateToggle({
     Callback = function(v)
         if v then
             task.spawn(function()
-                repeat task.wait(0.1) until player.Character and player.Character:FindFirstChild("HumanoidRootPart")
-                task.wait(2)
-                speedUpCastle(3)
+                while v do
+                    repeat task.wait(0.1) until player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+                    task.wait(2)
+                    fireSafe({ { { Speed = 3, Event = "InfiniteCastleAction", Action = "SpeedUp" }, "\003" } })
+                    task.wait(5)
+                end
             end)
         end
     end
@@ -142,9 +92,9 @@ CastleTab:CreateToggle({
 
 --// InfDesert
 local function startDesert()
-    fireDynamic({ { { Event = "InfiniteModeAction", Action = "Create" }, KEY_DEFAULT } })
+    fireSafe({ { { Event = "InfiniteModeAction", Action = "Create" }, "\003" } })
     task.wait(1)
-    fireDynamic({ { { Dungeon = 3604563306, Event = "InfiniteModeAction", Action = "Start" }, KEY_DEFAULT } })
+    fireSafe({ { { Dungeon = 3604563306, Event = "InfiniteModeAction", Action = "Start" }, "\003" } })
     task.wait(1)
     if standDesertEnabled then safeStandAt(desertCFrame) end
 end
@@ -153,22 +103,94 @@ local function restartDesert() safeRejoin(startDesert) end
 DesertTab:CreateButton({ Name = "Start Infinite Desert (Manual)", Callback=startDesert })
 DesertTab:CreateToggle({ Name="Stand in the Middle (InfDesert)", CurrentValue=false, Flag="StandDesertFlag", Callback=function(v) standDesertEnabled=v if v then safeStandAt(desertCFrame) end end})
 DesertTab:CreateToggle({ Name="Auto-Restart (on Portal Destroyed)", CurrentValue=false, Flag="AutoRestartDesertFlag", Callback=function(v) autoRestartDesert=v end})
-DesertTab:CreateToggle({ Name="Wave Speed 2", CurrentValue=false, Flag="WaveSpeed2DesertFlag", Callback=function(v) if v then task.spawn(function() repeat task.wait(0.1) until player.Character and player.Character:FindFirstChild("HumanoidRootPart") task.wait(2) speedUpDesert(2) end) end end})
-DesertTab:CreateToggle({ Name="Wave Speed 3", CurrentValue=false, Flag="WaveSpeed3DesertFlag", Callback=function(v) if v then task.spawn(function() repeat task.wait(0.1) until player.Character and player.Character:FindFirstChild("HumanoidRootPart") task.wait(2) speedUpDesert(3) end) end end})
+DesertTab:CreateToggle({
+    Name="Wave Speed 2",
+    CurrentValue=false,
+    Flag="WaveSpeed2DesertFlag",
+    Callback=function(v)
+        if v then
+            task.spawn(function()
+                while v do
+                    repeat task.wait(0.1) until player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+                    task.wait(2)
+                    fireSafe({ { { Speed = 2, Event = "InfiniteModeAction", Action = "SpeedUp" }, "\003" } })
+                    task.wait(5)
+                end
+            end)
+        end
+    end
+})
+DesertTab:CreateToggle({
+    Name="Wave Speed 3",
+    CurrentValue=false,
+    Flag="WaveSpeed3DesertFlag",
+    Callback=function(v)
+        if v then
+            task.spawn(function()
+                while v do
+                    repeat task.wait(0.1) until player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+                    task.wait(2)
+                    fireSafe({ { { Speed = 3, Event = "InfiniteModeAction", Action = "SpeedUp" }, "\003" } })
+                    task.wait(5)
+                end
+            end)
+        end
+    end
+})
 
 --// Infinite Labyrinth
 local function startLabyrinth()
-    fireDynamic({ { { Event="InfiniteLabyrinthAction", Action="Create" }, KEY_DEFAULT } })
+    fireSafe({ { { Event="InfiniteLabyrinthAction", Action="Create" }, "\003" } })
     task.wait(1)
-    fireDynamic({ { { Dungeon=3604563306, Event="InfiniteLabyrinthAction", Action="Start" }, KEY_DEFAULT } })
+    fireSafe({ { { Dungeon=3604563306, Event="InfiniteLabyrinthAction", Action="Start" }, "\003" } })
 end
 local function restartLabyrinth() safeRejoin(startLabyrinth) end
 
 LabTab:CreateButton({ Name="Start Infinite Labyrinth (Manual)", Callback=startLabyrinth })
 LabTab:CreateToggle({ Name="Auto-Restart (on Portal Destroyed)", CurrentValue=false, Flag="AutoRestartLabyrinthFlag", Callback=function(v) autoRestartLabyrinth=v end})
-LabTab:CreateToggle({ Name="Speed 1", CurrentValue=false, Flag="Speed1LabyrinthFlag", Callback=function(v) if v then speedUpLabyrinth(1) end end})
-LabTab:CreateToggle({ Name="Speed 2", CurrentValue=false, Flag="Speed2LabyrinthFlag", Callback=function(v) if v then speedUpLabyrinth(2) end end})
-LabTab:CreateToggle({ Name="Speed 3", CurrentValue=false, Flag="Speed3LabyrinthFlag", Callback=function(v) if v then speedUpLabyrinth(3) end end})
+LabTab:CreateToggle({ Name="Speed 1", CurrentValue=false, Flag="Speed1LabyrinthFlag", Callback=function(v) if v then fireSafe({ { { Speed = 1, Event = "InfiniteLabyrinthAction", Action = "SpeedUp" }, "\003" } }) end end})
+LabTab:CreateToggle({ Name="Speed 2", CurrentValue=false, Flag="Speed2LabyrinthFlag", Callback=function(v) if v then fireSafe({ { { Speed = 2, Event = "InfiniteLabyrinthAction", Action = "SpeedUp" }, "\003" } }) end end})
+LabTab:CreateToggle({ Name="Speed 3", CurrentValue=false, Flag="Speed3LabyrinthFlag", Callback=function(v) if v then fireSafe({ { { Speed = 3, Event = "InfiniteLabyrinthAction", Action = "SpeedUp" }, "\003" } }) end end})
+
+--// CemetryRush
+local function startCemetryRush()
+    if not useCemetryRushMode then return end
+    fireSafe({ { { Event="BossRushAction", Action="Create" }, "\003" } })
+    task.wait(1)
+    fireSafe({ { { Dungeon=3604563306, Action="Start", Diff=cemetryRushDifficulty, Event="BossRushAction" }, "\003" } })
+    if standCemetryRushEnabled then safeStandAt(cemetryRushCFrame) end
+end
+local function restartCemetryRush() safeRejoin(startCemetryRush) end
+
+CemetryRushTab:CreateButton({ Name="Start CemetryRush (Manual)", Callback=startCemetryRush })
+CemetryRushTab:CreateToggle({ Name="Stand in the Middle", CurrentValue=false, Flag="StandCemetryRushFlag", Callback=function(v) standCemetryRushEnabled=v if v then safeStandAt(cemetryRushCFrame) end end})
+CemetryRushTab:CreateDropdown({
+    Name = "Select Difficulty",
+    Options = {"Easy", "Medium", "Hard", "Insane"},
+    CurrentOption = "Insane",
+    Flag = "CemetryRushDifficultyFlag",
+    Callback = function(option) cemetryRushDifficulty = option end
+})
+CemetryRushTab:CreateToggle({
+    Name = "Activate Selected Difficulty",
+    CurrentValue=false,
+    Flag = "UseCemetryRushDifficultyFlag",
+    Callback = function(v) useCemetryRushMode = v end
+})
+CemetryRushTab:CreateToggle({
+    Name = "Auto-Restart (on Rush Ended)",
+    CurrentValue=false,
+    Flag="AutoRestartCemetryRushFlag",
+    Callback=function(v) autoRestartCemetryRush=v end
+})
+
+--// HospRaid
+local function joinHospRaid()
+    if joinedHospRaid then return end
+    joinedHospRaid = true
+    fireSafe({ { { Event="HLRaidAction",Action="Join" }, "\003" } })
+end
+HospRaidTab:CreateToggle({ Name="Join HospRaid", CurrentValue=false, Flag="JoinHospRaidFlag", Callback=function(v) if v then joinHospRaid() end end})
 
 --// Misc
 MiscTab:CreateToggle({
@@ -181,16 +203,7 @@ MiscTab:CreateToggle({
             task.spawn(function()
                 while autoClickEnabled do
                     task.wait(0.01)
-                    local args = {
-                        {
-                            {
-                                Event = "PunchAttack",
-                                Enemy = "b0b7150ea58f45f19cb51136e05dd22e"
-                            },
-                            KEY_DEFAULT
-                        }
-                    }
-                    fireDynamic(args)
+                    fireSafe({ { { Event = "PunchAttack", Enemy = "b0b7150ea58f45f19cb51136e05dd22e" }, "\003" } })
                 end
             end)
         end
@@ -206,75 +219,13 @@ MiscTab:CreateToggle({
         if v then
             task.spawn(function()
                 while autoBloodWeaponSwitch do
-                    local toWeap = {
-                        {
-                            { Action = "Equip", Event = "Teams", TeamId = "ced2" },
-                            KEY_DEFAULT
-                        }
-                    }
-                    fireSafe(toWeap)
+                    fireSafe({ { { Action = "Equip", Event = "Teams", TeamId = "ced2" }, "\003" } })
                     task.wait(2)
-                    local toDmg = {
-                        {
-                            { Action = "Equip", Event = "Teams", TeamId = "f2ae" },
-                            KEY_DEFAULT
-                        }
-                    }
-                    fireSafe(toDmg)
+                    fireSafe({ { { Action = "Equip", Event = "Teams", TeamId = "f2ae" }, "\003" } })
                     task.wait(15)
                 end
             end)
         end
-    end
-})
-
---// HospRaid
-local function joinHospRaid()
-    if joinedHospRaid then return end
-    joinedHospRaid = true
-    fireDynamic({ { { Event="HLRaidAction",Action="Join" }, KEY_DEFAULT } })
-end
-HospRaidTab:CreateToggle({ Name="Join HospRaid", CurrentValue=false, Flag="JoinHospRaidFlag", Callback=function(v) if v then joinHospRaid() end end})
-
---// CemetryRush
-local cemetryRushDifficulty = "Insane"
-local useCemetryRushMode = false
-local standCemetryRushEnabled, autoRestartCemetryRush = false, false
-
-local function startCemetryRush()
-    if not useCemetryRushMode then return end
-    fireDynamic({ { { Event="BossRushAction", Action="Create" }, KEY_DEFAULT } })
-    task.wait(1)
-    fireDynamic({ { { Dungeon=3604563306, Action="Start", Diff=cemetryRushDifficulty, Event="BossRushAction" }, KEY_DEFAULT } })
-    if standCemetryRushEnabled then safeStandAt(cemetryRushCFrame) end
-end
-local function restartCemetryRush() safeRejoin(startCemetryRush) end
-
-CemetryRushTab:CreateButton({ Name="Start CemetryRush (Manual)", Callback=startCemetryRush })
-CemetryRushTab:CreateToggle({ Name="Stand in the Middle", CurrentValue=false, Flag="StandCemetryRushFlag", Callback=function(v) standCemetryRushEnabled=v if v then safeStandAt(cemetryRushCFrame) end end})
-CemetryRushTab:CreateDropdown({
-    Name = "Select Difficulty",
-    Options = {"Easy", "Medium", "Hard", "Insane"},
-    CurrentOption = "Insane",
-    Flag = "CemetryRushDifficultyFlag",
-    Callback = function(option)
-        cemetryRushDifficulty = option
-    end
-})
-CemetryRushTab:CreateToggle({
-    Name = "Activate Selected Difficulty",
-    CurrentValue=false,
-    Flag = "UseCemetryRushDifficultyFlag",
-    Callback = function(v)
-        useCemetryRushMode = v
-    end
-})
-CemetryRushTab:CreateToggle({
-    Name = "Auto-Restart (on Rush Ended)",
-    CurrentValue=false,
-    Flag="AutoRestartCemetryRushFlag",
-    Callback=function(v)
-        autoRestartCemetryRush=v
     end
 })
 
@@ -293,10 +244,9 @@ dataRemoteEvent.OnClientEvent:Connect(function(...)
         for _,v in pairs(tbl) do
             if type(v)=="table" then recursiveCheck(v)
             elseif type(v)=="string" then
-                local msg = v:upper()
-                if msg:find("INFINITECASTLE") and msg:find("DESTROYED") then
+                local msg=v:upper()
+                if msg:find("PORTAL DESTROYED") or msg:find("CASTLE") then
                     if autoRestartCastle then restartCastle() end
-                elseif msg:find("PORTAL DESTROYED") then
                     if autoRestartDesert then restartDesert() end
                     if autoRestartLabyrinth then restartLabyrinth() end
                 elseif msg:find("RUSH ENDED") then
@@ -308,5 +258,4 @@ dataRemoteEvent.OnClientEvent:Connect(function(...)
     for _,v in ipairs({...}) do recursiveCheck(v) end
 end)
 
---// Load Configuration
 Rayfield:LoadConfiguration("InfiniteModesHub")
