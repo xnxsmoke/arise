@@ -50,7 +50,7 @@ local castleCFrame = CFrame.new(432.6329, 4384.6372, -1898.6741)
 local desertCFrame = CFrame.new(463.8988, 4383.7646, -1888.2440)
 local cemetryRushCFrame = CFrame.new(214.981415, 1594.494141, -4312.195801)
 
--- Finestra Rayfield (stessa logica vecchia)
+-- Finestra Rayfield
 local Window = Rayfield:CreateWindow({
     Name = "xnxsmoke Hub",
     LoadingTitle = "xnxsmoke Loader",
@@ -75,6 +75,11 @@ local autoRestartCastle, autoRestartDesert, autoRestartLabyrinth, autoRestartCem
 local cemetryRushDifficulty, useCemetryRushMode = "Insane", false
 local autoClickEnabled, autoBloodWeaponSwitch = false, false
 
+-- Checkpoints
+local castleCheckpoint = 0
+local desertCheckpoint = 0
+local checkpointOptions = {"0","30","60","90","120","150","180","210","240","270","300","330","360"}
+
 --// InfCastle
 local function startCastle()
     fireSafe({
@@ -82,11 +87,20 @@ local function startCastle()
         Action = "Create"
     })
     task.wait(1)
-    fireSafe({
-        Dungeon = 3604563306,
-        Event = "InfiniteCastleAction",
-        Action = "Start"
-    })
+    if castleCheckpoint == 0 then
+        fireSafe({
+            Dungeon = 3604563306,
+            Event = "InfiniteCastleAction",
+            Action = "Start"
+        })
+    else
+        fireSafe({
+            Dungeon = 3604563306,
+            Event = "InfiniteCastleAction",
+            Action = "Start",
+            Check = tostring(castleCheckpoint)
+        })
+    end
     task.wait(1)
     if standCastleEnabled then safeStandAt(castleCFrame) end
 end
@@ -94,6 +108,16 @@ end
 local function restartCastle()
     safeRejoin(startCastle)
 end
+
+CastleTab:CreateDropdown({
+    Name = "Checkpoint (Castle)",
+    Options = checkpointOptions,
+    CurrentOption = "0",
+    Flag = "CastleCheckpointFlag",
+    Callback = function(option)
+        castleCheckpoint = tonumber(option) or 0
+    end
+})
 
 CastleTab:CreateButton({
     Name = "Start Infinite Castle (Manual)",
@@ -135,11 +159,20 @@ local function startDesert()
         Action = "Create"
     })
     task.wait(1)
-    fireSafe({
-        Dungeon = 3604563306,
-        Event = "InfiniteModeAction",
-        Action = "Start"
-    })
+    if desertCheckpoint == 0 then
+        fireSafe({
+            Dungeon = 3604563306,
+            Event = "InfiniteModeAction",
+            Action = "Start"
+        })
+    else
+        fireSafe({
+            Dungeon = 3604563306,
+            Event = "InfiniteModeAction",
+            Action = "Start",
+            Check = tostring(desertCheckpoint)
+        })
+    end
     task.wait(1)
     if standDesertEnabled then safeStandAt(desertCFrame) end
 end
@@ -147,6 +180,16 @@ end
 local function restartDesert()
     safeRejoin(startDesert)
 end
+
+DesertTab:CreateDropdown({
+    Name = "Checkpoint (Desert)",
+    Options = checkpointOptions,
+    CurrentOption = "0",
+    Flag = "DesertCheckpointFlag",
+    Callback = function(option)
+        desertCheckpoint = tonumber(option) or 0
+    end
+})
 
 DesertTab:CreateButton({
     Name = "Start Infinite Desert (Manual)",
@@ -342,7 +385,7 @@ MiscTab:CreateToggle({
     end
 })
 
--- Respawn: rimetti in posizione se togglato
+-- Respawn
 player.CharacterAdded:Connect(function()
     task.wait(1)
     if standCastleEnabled then safeStandAt(castleCFrame) end
@@ -350,7 +393,7 @@ player.CharacterAdded:Connect(function()
     if standCemetryRushEnabled then safeStandAt(cemetryRushCFrame) end
 end)
 
--- Rilevamento Auto-Restart da dataRemoteEvent
+-- Auto-Restart
 dataRemoteEvent.OnClientEvent:Connect(function(...)
     local function scan(tbl)
         if type(tbl) ~= "table" then return end
@@ -360,14 +403,12 @@ dataRemoteEvent.OnClientEvent:Connect(function(...)
             elseif type(v) == "string" then
                 local msg = v:upper()
 
-                -- Portal Destroyed / fine Infinite modes
                 if msg:find("PORTAL") and msg:find("DESTROY") then
                     if autoRestartCastle then restartCastle() end
                     if autoRestartDesert then restartDesert() end
                     if autoRestartLabyrinth then restartLabyrinth() end
                 end
 
-                -- Rush ended / fine Boss Rush (più generico)
                 if msg:find("RUSH") and msg:find("END") then
                     if autoRestartCemetryRush then restartCemetryRush() end
                 end
@@ -380,5 +421,4 @@ dataRemoteEvent.OnClientEvent:Connect(function(...)
     end
 end)
 
--- Carica configurazione Rayfield (stessa logica script vecchio)
 Rayfield:LoadConfiguration("InfiniteModesHub")
