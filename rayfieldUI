@@ -57,7 +57,8 @@ local Window = Rayfield:CreateWindow({
 	LoadingSubtitle = "by xnxsmoke",
 	ConfigurationSaving = {
 		Enabled = true,
-		FileName = "InfiniteModesHub",
+		FolderName = "xnxsmokeHubConfigs", -- 📁 cartella dedicata
+		FileName = "InfiniteModesHub",     -- 📄 nome file
 		AutoSave = true
 	},
 })
@@ -95,6 +96,7 @@ CastleTab:CreateButton({
 CastleTab:CreateToggle({
 	Name = "Stand in the Middle (InfCastle)",
 	CurrentValue = false,
+	Flag = "StandCastleFlag",
 	Callback = function(v)
 		standCastleEnabled = v
 		if v then safeStandAt(castleCFrame) end
@@ -104,6 +106,7 @@ CastleTab:CreateToggle({
 CastleTab:CreateToggle({
 	Name = "Auto-Restart (on Portal Destroyed)",
 	CurrentValue = false,
+	Flag = "AutoRestartCastleFlag",
 	Callback = function(v)
 		autoRestartCastle = v
 	end
@@ -112,6 +115,7 @@ CastleTab:CreateToggle({
 CastleTab:CreateToggle({
 	Name = "Wave Speed 3",
 	CurrentValue = false,
+	Flag = "WaveSpeedCastle3Flag",
 	Callback = function(v)
 		if v then speedUp("InfiniteCastleAction", 3) end
 	end
@@ -138,6 +142,7 @@ DesertTab:CreateButton({
 DesertTab:CreateToggle({
 	Name = "Stand in the Middle (InfDesert)",
 	CurrentValue = false,
+	Flag = "StandDesertFlag",
 	Callback = function(v)
 		standDesertEnabled = v
 		if v then safeStandAt(desertCFrame) end
@@ -147,6 +152,7 @@ DesertTab:CreateToggle({
 DesertTab:CreateToggle({
 	Name = "Auto-Restart (on Portal Destroyed)",
 	CurrentValue = false,
+	Flag = "AutoRestartDesertFlag",
 	Callback = function(v)
 		autoRestartDesert = v
 	end
@@ -155,6 +161,7 @@ DesertTab:CreateToggle({
 DesertTab:CreateToggle({
 	Name = "Wave Speed 2",
 	CurrentValue = false,
+	Flag = "WaveSpeed2DesertFlag",
 	Callback = function(v)
 		if v then speedUp("InfiniteModeAction", 2) end
 	end
@@ -163,6 +170,7 @@ DesertTab:CreateToggle({
 DesertTab:CreateToggle({
 	Name = "Wave Speed 3",
 	CurrentValue = false,
+	Flag = "WaveSpeed3DesertFlag",
 	Callback = function(v)
 		if v then speedUp("InfiniteModeAction", 3) end
 	end
@@ -187,6 +195,7 @@ LabTab:CreateButton({
 LabTab:CreateToggle({
 	Name = "Auto-Restart (on Portal Destroyed)",
 	CurrentValue = false,
+	Flag = "AutoRestartLabyrinthFlag",
 	Callback = function(v)
 		autoRestartLabyrinth = v
 	end
@@ -195,6 +204,7 @@ LabTab:CreateToggle({
 LabTab:CreateToggle({
 	Name = "Speed 3",
 	CurrentValue = false,
+	Flag = "WaveSpeed3LabFlag",
 	Callback = function(v)
 		if v then speedUp("InfiniteLabyrinthAction", 3) end
 	end
@@ -226,6 +236,7 @@ CemetryRushTab:CreateButton({
 CemetryRushTab:CreateToggle({
 	Name = "Stand in the Middle",
 	CurrentValue = false,
+	Flag = "StandCemetryRushFlag",
 	Callback = function(v)
 		standCemetryRushEnabled = v
 		if v then safeStandAt(cemetryRushCFrame) end
@@ -236,6 +247,7 @@ CemetryRushTab:CreateDropdown({
 	Name = "Select Difficulty",
 	Options = {"Easy", "Medium", "Hard", "Insane"},
 	CurrentOption = "Insane",
+	Flag = "CemetryRushDifficultyFlag",
 	Callback = function(opt)
 		cemetryRushDifficulty = opt
 	end
@@ -244,6 +256,7 @@ CemetryRushTab:CreateDropdown({
 CemetryRushTab:CreateToggle({
 	Name = "Activate Selected Difficulty",
 	CurrentValue = false,
+	Flag = "UseCemetryRushDifficultyFlag",
 	Callback = function(v)
 		useCemetryRushMode = v
 	end
@@ -252,6 +265,7 @@ CemetryRushTab:CreateToggle({
 CemetryRushTab:CreateToggle({
 	Name = "Auto-Restart (on Rush Ended)",
 	CurrentValue = false,
+	Flag = "AutoRestartCemetryRushFlag",
 	Callback = function(v)
 		autoRestartCemetryRush = v
 	end
@@ -261,6 +275,7 @@ CemetryRushTab:CreateToggle({
 MiscTab:CreateToggle({
 	Name = "Auto Click (PunchAttack, Fast)",
 	CurrentValue = false,
+	Flag = "AutoClickFlag",
 	Callback = function(v)
 		autoClickEnabled = v
 		if v then
@@ -277,6 +292,7 @@ MiscTab:CreateToggle({
 MiscTab:CreateToggle({
 	Name = "Auto Blood Weapon Switch",
 	CurrentValue = false,
+	Flag = "AutoBloodWeaponSwitchFlag",
 	Callback = function(v)
 		autoBloodWeaponSwitch = v
 		if v then
@@ -323,3 +339,6 @@ dataRemoteEvent.OnClientEvent:Connect(function(...)
 		scan(v)
 	end
 end)
+
+-- ✅ Carica la configurazione salvata (secondo documentazione Rayfield)
+Rayfield:LoadConfiguration()
