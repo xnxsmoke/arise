@@ -81,13 +81,24 @@ local selectedDesertCheckpoint = "0"
 -- INF CASTLE
 ---------------------------------------------------------------------
 
+local selectedCastleCheckpoint = "0"
+
 CastleTab:CreateButton({
     Name = "Start Infinite Castle (Manual)",
     Callback = function()
         if selectedCastleCheckpoint == "0" then
-            fireSafe({ Event = "InfiniteCastleAction", Action = "Create" })
+            fireSafe({
+                Event = "InfiniteCastleAction",
+                Action = "Create"
+            })
+
             task.wait(1)
-            fireSafe({ Dungeon = 3604563306, Event = "InfiniteCastleAction", Action = "Start" })
+
+            fireSafe({
+                Dungeon = 3604563306,
+                Event = "InfiniteCastleAction",
+                Action = "Start"
+            })
         else
             fireSafe({
                 Event = "InfiniteCastleAction",
@@ -96,9 +107,11 @@ CastleTab:CreateButton({
                 Check = selectedCastleCheckpoint
             })
         end
-        
+
         task.wait(1)
-        if standCastleEnabled then safeStandAt(castleCFrame) end
+        if standCastleEnabled then
+            safeStandAt(castleCFrame)
+        end
     end
 })
 
@@ -108,7 +121,7 @@ CastleTab:CreateDropdown({
     CurrentOption = "0",
     Flag = "CastleCheckpointFlag",
     Callback = function(opt)
-        selectedCastleCheckpoint = opt
+        selectedCastleCheckpoint = tostring(opt)
     end
 })
 
@@ -144,13 +157,24 @@ CastleTab:CreateToggle({
 -- INF DESERT
 ---------------------------------------------------------------------
 
+local selectedDesertCheckpoint = "0"
+
 DesertTab:CreateButton({
     Name = "Start Infinite Desert (Manual)",
     Callback = function()
         if selectedDesertCheckpoint == "0" then
-            fireSafe({ Event = "InfiniteModeAction", Action = "Create" })
+            fireSafe({
+                Event = "InfiniteModeAction",
+                Action = "Create"
+            })
+
             task.wait(1)
-            fireSafe({ Dungeon = 3604563306, Event = "InfiniteModeAction", Action = "Start" })
+
+            fireSafe({
+                Dungeon = 3604563306,
+                Event = "InfiniteModeAction",
+                Action = "Start"
+            })
         else
             fireSafe({
                 Event = "InfiniteModeAction",
@@ -159,9 +183,11 @@ DesertTab:CreateButton({
                 Check = selectedDesertCheckpoint
             })
         end
-        
+
         task.wait(1)
-        if standDesertEnabled then safeStandAt(desertCFrame) end
+        if standDesertEnabled then
+            safeStandAt(desertCFrame)
+        end
     end
 })
 
@@ -171,7 +197,7 @@ DesertTab:CreateDropdown({
     CurrentOption = "0",
     Flag = "DesertCheckpointFlag",
     Callback = function(opt)
-        selectedDesertCheckpoint = opt
+        selectedDesertCheckpoint = tostring(opt)
     end
 })
 
