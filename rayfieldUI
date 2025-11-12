@@ -81,8 +81,6 @@ local selectedDesertCheckpoint = "0"
 -- INF CASTLE
 ---------------------------------------------------------------------
 
-local selectedCastleCheckpoint = "0"
-
 CastleTab:CreateButton({
     Name = "Start Infinite Castle (Manual)",
     Callback = function()
@@ -156,8 +154,6 @@ CastleTab:CreateToggle({
 ---------------------------------------------------------------------
 -- INF DESERT
 ---------------------------------------------------------------------
-
-local selectedDesertCheckpoint = "0"
 
 DesertTab:CreateButton({
     Name = "Start Infinite Desert (Manual)",
