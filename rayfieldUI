@@ -213,6 +213,19 @@ LabTab:CreateToggle({
 -- BOSS RUSH (UPDATED WITH ULTRA)
 ----------------------------------------------------
 
+-- 🔥 Boss Rush Tab – Versione Sistemata e Aggiornata
+
+local targetWave = 0
+local autoRestartAtWave = false
+local currentWave = 0
+local waveLabelConnected = {}
+local cemetryRushDifficulty = "Insane"
+local useCemetryRushMode = false
+local standCemetryRushEnabled = false
+
+local cemetryRushCFrame = CFrame.new(214.9814, 1594.4941, -4312.1958)
+
+-- Avvio Boss Rush
 local function startCemetryRush()
     if not useCemetryRushMode then return end
 
@@ -226,13 +239,17 @@ local function startCemetryRush()
         Diff = cemetryRushDifficulty
     })
 
-    if standCemetryRushEnabled then safeStandAt(cemetryRushCFrame) end
+    if standCemetryRushEnabled then
+        safeStandAt(cemetryRushCFrame)
+    end
 end
 
+-- Restart Boss Rush
 local function restartCemetryRush()
     safeRejoin(startCemetryRush)
 end
 
+-- UI TAB
 CemetryRushTab:CreateButton({
     Name = "Start CemetryRush (Manual)",
     Callback = startCemetryRush
@@ -262,43 +279,84 @@ CemetryRushTab:CreateToggle({
     Name = "Activate Selected Difficulty",
     CurrentValue = false,
     Flag = "UseCemetryRushDifficultyFlag",
-    Callback = function(v) useCemetryRushMode = v end
+    Callback = function(v)
+        useCemetryRushMode = v
+    end
 })
 
 CemetryRushTab:CreateToggle({
     Name = "Auto-Restart (on Rush Ended)",
     CurrentValue = false,
     Flag = "AutoRestartCemetryRushFlag",
-    Callback = function(v) autoRestartCemetryRush = v end
+    Callback = function(v)
+        autoRestartCemetryRush = v
+    end
 })
 
-local targetWave = 0
-local autoRestartAtWave = false
-
+-- Input Wave Target
 CemetryRushTab:CreateInput({
     Name = "Restart alla Wave",
     PlaceholderText = "Inserisci wave (es. 20)",
     RemoveTextAfterFocusLost = false,
     Callback = function(text)
         local num = tonumber(text)
-        if num then
-            targetWave = num
-            print("Target wave impostata a:", targetWave)
+
+        if num and num > 0 then
+            targetWave = math.floor(num)
+            print("[Boss Rush] Target wave impostata a:", targetWave)
         else
-            print("Valore wave non valido:", text)
+            targetWave = 0
+            warn("[Boss Rush] Valore wave non valido:", text)
         end
     end
 })
 
+-- Toggle Auto-Restart per Wave
 CemetryRushTab:CreateToggle({
     Name = "Attiva Auto-Restart alla Wave",
     CurrentValue = false,
     Flag = "AutoRestartAtWaveFlag",
     Callback = function(v)
         autoRestartAtWave = v
-        print("Auto restart per wave =", v)
+        print("[Boss Rush] Auto-restart per wave:", v)
     end
 })
+
+-- Rilevazione Wave Fixata
+local function detectWaveLabel(lbl)
+    if not lbl:IsA("TextLabel") then return end
+    if not lbl.Text:lower():find("wave") then return end
+    if waveLabelConnected[lbl] then return end
+
+    waveLabelConnected[lbl] = true
+
+    lbl:GetPropertyChangedSignal("Text"):Connect(function()
+        local wave = tonumber(lbl.Text:match("[Ww]ave[^%d]*(%d+)"))
+
+        if wave then
+            currentWave = wave
+            print("[Boss Rush] Wave aggiornata:", currentWave)
+
+            if autoRestartAtWave and targetWave > 0 then
+                if currentWave >= targetWave then
+                    print("🔥 [Boss Rush] Wave target raggiunta:", targetWave, "→ Restart")
+                    autoRestartAtWave = false
+                    restartCemetryRush()
+                end
+            end
+        end
+    end)
+end
+
+task.spawn(function()
+    local gui = player:WaitForChild("PlayerGui")
+
+    for _, v in ipairs(gui:GetDescendants()) do
+        detectWaveLabel(v)
+    end
+
+    gui.DescendantAdded:Connect(detectWaveLabel)
+end)
 
 ----------------------------------------------------
 -- MISC
