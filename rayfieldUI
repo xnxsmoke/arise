@@ -7,7 +7,6 @@ local BridgeNet2 = ReplicatedStorage:WaitForChild("BridgeNet2")
 local Bridge = require(BridgeNet2).ReferenceBridge("GENERAL_EVENT")
 local dataRemoteEvent = BridgeNet2:WaitForChild("dataRemoteEvent")
 
--- Utils base
 local function fireSafe(data)
     pcall(function()
         Bridge:Fire(data)
@@ -45,12 +44,10 @@ local function speedUp(eventName, speed)
     end)
 end
 
--- Posizioni
 local castleCFrame = CFrame.new(432.6329, 4384.6372, -1898.6741)
 local desertCFrame = CFrame.new(463.8988, 4383.7646, -1888.2440)
 local cemetryRushCFrame = CFrame.new(214.981415, 1594.494141, -4312.195801)
 
--- Finestra Rayfield (stessa logica vecchia)
 local Window = Rayfield:CreateWindow({
     Name = "xnxsmoke Hub",
     LoadingTitle = "xnxsmoke Loader",
@@ -62,31 +59,22 @@ local Window = Rayfield:CreateWindow({
     },
 })
 
--- Tabs
 local CastleTab = Window:CreateTab("InfCastle", 4483362458)
 local DesertTab = Window:CreateTab("InfDesert", 4483362458)
 local LabTab = Window:CreateTab("InfLab", 4483362458)
 local CemetryRushTab = Window:CreateTab("CemetryRush", 4483362458)
+local HospRaidTab = Window:CreateTab("HospRaid", 4483362458)
 local MiscTab = Window:CreateTab("Misc", 4483362458)
 
--- Variabili stato
 local standCastleEnabled, standDesertEnabled, standCemetryRushEnabled = false, false, false
 local autoRestartCastle, autoRestartDesert, autoRestartLabyrinth, autoRestartCemetryRush = false, false, false, false
 local cemetryRushDifficulty, useCemetryRushMode = "Insane", false
 local autoClickEnabled, autoBloodWeaponSwitch = false, false
 
---// InfCastle
 local function startCastle()
-    fireSafe({
-        Event = "InfiniteCastleAction",
-        Action = "Create"
-    })
+    fireSafe({ Event="InfiniteCastleAction", Action="Create" })
     task.wait(1)
-    fireSafe({
-        Dungeon = 3604563306,
-        Event = "InfiniteCastleAction",
-        Action = "Start"
-    })
+    fireSafe({ Dungeon=3604563306, Event="InfiniteCastleAction", Action="Start" })
     task.wait(1)
     if standCastleEnabled then safeStandAt(castleCFrame) end
 end
@@ -128,18 +116,10 @@ CastleTab:CreateToggle({
     end
 })
 
---// InfDesert
 local function startDesert()
-    fireSafe({
-        Event = "InfiniteModeAction",
-        Action = "Create"
-    })
+    fireSafe({ Event="InfiniteModeAction", Action="Create" })
     task.wait(1)
-    fireSafe({
-        Dungeon = 3604563306,
-        Event = "InfiniteModeAction",
-        Action = "Start"
-    })
+    fireSafe({ Dungeon=3604563306, Event="InfiniteModeAction", Action="Start" })
     task.wait(1)
     if standDesertEnabled then safeStandAt(desertCFrame) end
 end
@@ -190,18 +170,10 @@ DesertTab:CreateToggle({
     end
 })
 
---// Infinite Labyrinth
 local function startLabyrinth()
-    fireSafe({
-        Event = "InfiniteLabyrinthAction",
-        Action = "Create"
-    })
+    fireSafe({ Event="InfiniteLabyrinthAction", Action="Create" })
     task.wait(1)
-    fireSafe({
-        Dungeon = 3604563306,
-        Event = "InfiniteLabyrinthAction",
-        Action = "Start"
-    })
+    fireSafe({ Dungeon=3604563306, Event="InfiniteLabyrinthAction", Action="Start" })
 end
 
 local function restartLabyrinth()
@@ -231,19 +203,15 @@ LabTab:CreateToggle({
     end
 })
 
---// CemetryRush (Boss Rush)
 local function startCemetryRush()
     if not useCemetryRushMode then return end
-    fireSafe({
-        Event = "BossRushAction",
-        Action = "Create"
-    })
+    fireSafe({ Event="BossRushAction", Action="Create" })
     task.wait(1)
     fireSafe({
-        Dungeon = 3604563306,
-        Action = "Start",
-        Diff = cemetryRushDifficulty,
-        Event = "BossRushAction"
+        Dungeon=3604563306,
+        Action="Start",
+        Diff=cemetryRushDifficulty,
+        Event="BossRushAction"
     })
     if standCemetryRushEnabled then safeStandAt(cemetryRushCFrame) end
 end
@@ -295,15 +263,30 @@ CemetryRushTab:CreateToggle({
     end
 })
 
---// HospRaid
+-- HOSPITAL RAID
+
+local joinedHospRaid = false
+
 local function joinHospRaid()
     if joinedHospRaid then return end
     joinedHospRaid = true
-    fireDynamic({ { { Event="HLRaidAction",Action="Join" }, dynamicKey } })
+    fireSafe({
+        Event = "HLRaidAction",
+        Action = "Join"
+    })
 end
-HospRaidTab:CreateToggle({ Name="Join HospRaid", CurrentValue=false, Flag="JoinHospRaidFlag", Callback=function(v) if v then joinHospRaid() end end})
 
---// Misc
+HospRaidTab:CreateToggle({
+    Name = "Join HospRaid",
+    CurrentValue = false,
+    Flag = "JoinHospRaidFlag",
+    Callback = function(v)
+        if v then joinHospRaid() end
+    end
+})
+
+-- MISC
+
 MiscTab:CreateToggle({
     Name = "Auto Click (PunchAttack, Fast)",
     CurrentValue = false,
@@ -314,9 +297,7 @@ MiscTab:CreateToggle({
             task.spawn(function()
                 while autoClickEnabled do
                     task.wait(0.01)
-                    fireSafe({
-                        Event = "PunchAttack"
-                    })
+                    fireSafe({ Event="PunchAttack" })
                 end
             end)
         end
@@ -332,17 +313,9 @@ MiscTab:CreateToggle({
         if v then
             task.spawn(function()
                 while autoBloodWeaponSwitch do
-                    fireSafe({
-                        Action = "Equip",
-                        Event = "Teams",
-                        TeamId = "ced2"
-                    })
+                    fireSafe({ Action="Equip", Event="Teams", TeamId="ced2" })
                     task.wait(2)
-                    fireSafe({
-                        Action = "Equip",
-                        Event = "Teams",
-                        TeamId = "f2ae"
-                    })
+                    fireSafe({ Action="Equip", Event="Teams", TeamId="f2ae" })
                     task.wait(15)
                 end
             end)
@@ -350,7 +323,6 @@ MiscTab:CreateToggle({
     end
 })
 
--- Respawn: rimetti in posizione se togglato
 player.CharacterAdded:Connect(function()
     task.wait(1)
     if standCastleEnabled then safeStandAt(castleCFrame) end
@@ -358,7 +330,6 @@ player.CharacterAdded:Connect(function()
     if standCemetryRushEnabled then safeStandAt(cemetryRushCFrame) end
 end)
 
--- Rilevamento Auto-Restart da dataRemoteEvent
 dataRemoteEvent.OnClientEvent:Connect(function(...)
     local function scan(tbl)
         if type(tbl) ~= "table" then return end
@@ -368,14 +339,12 @@ dataRemoteEvent.OnClientEvent:Connect(function(...)
             elseif type(v) == "string" then
                 local msg = v:upper()
 
-                -- Portal Destroyed / fine Infinite modes
                 if msg:find("PORTAL") and msg:find("DESTROY") then
                     if autoRestartCastle then restartCastle() end
                     if autoRestartDesert then restartDesert() end
                     if autoRestartLabyrinth then restartLabyrinth() end
                 end
 
-                -- Rush ended / fine Boss Rush (più generico)
                 if msg:find("RUSH") and msg:find("END") then
                     if autoRestartCemetryRush then restartCemetryRush() end
                 end
@@ -383,10 +352,7 @@ dataRemoteEvent.OnClientEvent:Connect(function(...)
         end
     end
 
-    for _, v in ipairs({ ... }) do
-        scan(v)
-    end
+    for _, v in ipairs({...}) do scan(v) end
 end)
 
--- Carica configurazione Rayfield (stessa logica script vecchio)
 Rayfield:LoadConfiguration("InfiniteModesHub")
