@@ -159,9 +159,10 @@ LabTab:CreateToggle({
     Callback = function(v) if v then speedUp("InfiniteLabyrinthAction", 3) end end
 })
 
--- === PART CEMETRY RUSH (BOSSRUSH) ===
+-- === CemetryRush/BossRush sezione ===
 local standCemetryRushEnabled, autoRestartCemetryRush, autoRestartAtWave = false, false, false
 local cemetryRushDifficulty = "Insane"
+local useSelectedDifficulty = false
 local targetWave = 0
 local currentWave = 0
 local waveLabelConnected = {}
@@ -197,17 +198,37 @@ CemetryRushTab:CreateDropdown({
     end
 })
 
+CemetryRushTab:CreateToggle({
+    Name = "Usa la difficoltà selezionata",
+    CurrentValue = false,
+    Flag = "UseSelectedDifficultyFlag",
+    Callback = function(v)
+        useSelectedDifficulty = v
+        print("[DEBUG] Use selected difficulty toggle:", v)
+    end
+})
+
 local function startCemetryRush()
-    print("[DEBUG] BossRush Difficulty sent to server:", cemetryRushDifficulty)
+    print("[DEBUG] Try BossRush Start, UseSelected:", useSelectedDifficulty, "Diff:", cemetryRushDifficulty)
     fireSafe({Event = "BossRushAction", Action = "Create"})
     task.wait(1)
-    fireSafe({
-        Event = "BossRushAction",
-        Action = "Start",
-        Dungeon = 3604563306,
-        Diff = cemetryRushDifficulty,
-        Wave = targetWave > 0 and targetWave or nil
-    })
+    if useSelectedDifficulty then
+        fireSafe({
+            Event = "BossRushAction",
+            Action = "Start",
+            Dungeon = 3604563306,
+            Diff = cemetryRushDifficulty,
+            Wave = targetWave > 0 and targetWave or nil
+        })
+    else
+        fireSafe({
+            Event = "BossRushAction",
+            Action = "Start",
+            Dungeon = 3604563306,
+            Diff = "Insane", -- invia default "Insane" se il toggle non è attivo
+            Wave = targetWave > 0 and targetWave or nil
+        })
+    end
     if standCemetryRushEnabled then safeStandAt(cemetryRushCFrame) end
 end
 
