@@ -193,18 +193,19 @@ CemetryRushTab:CreateDropdown({
     Flag = "CemetryRushDifficultyFlag",
     Callback = function(opt)
         cemetryRushDifficulty = opt
+        print("[DEBUG] Difficulty selected:", cemetryRushDifficulty)
     end
 })
 
 local function startCemetryRush()
+    print("[DEBUG] BossRush Difficulty sent to server:", cemetryRushDifficulty)
     fireSafe({Event = "BossRushAction", Action = "Create"})
     task.wait(1)
-    -- la difficulty è sempre trasmessa, anche "Ultra"
     fireSafe({
         Event = "BossRushAction",
         Action = "Start",
         Dungeon = 3604563306,
-        Diff = cemetryRushDifficulty, -- None filtering, always selected value!
+        Diff = cemetryRushDifficulty,
         Wave = targetWave > 0 and targetWave or nil
     })
     if standCemetryRushEnabled then safeStandAt(cemetryRushCFrame) end
