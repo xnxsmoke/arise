@@ -176,7 +176,7 @@ local autoRestartAtWave = false
 
 CemetryRushTab:CreateButton({Name = "Start CemetryRush (Manual)", Callback = startCemetryRush})
 CemetryRushTab:CreateToggle({Name = "Stand in the Middle", CurrentValue = false, Flag = "StandCemetryRushFlag", Callback = function(v) standCemetryRushEnabled = v if v then safeStandAt(cemetryRushCFrame) end end})
-CemetryRushTab:CreateDropdown({Name = "Select Difficulty", Options = {"Easy","Medium","Hard","Insane"}, CurrentOption = "Insane", Flag = "CemetryRushDifficultyFlag", Callback = function(opt) cemetryRushDifficulty = opt end})
+CemetryRushTab:CreateDropdown({Name = "Select Difficulty", Options = {"Easy","Medium","Hard","Insane","Ultra"}, CurrentOption = "Insane", Flag = "CemetryRushDifficultyFlag", Callback = function(opt) cemetryRushDifficulty = opt end})
 CemetryRushTab:CreateToggle({Name = "Activate Selected Difficulty", CurrentValue = false, Flag = "UseCemetryRushDifficultyFlag", Callback = function(v) useCemetryRushMode = v end})
 CemetryRushTab:CreateToggle({Name = "Auto-Restart (on Rush Ended)", CurrentValue = false, Flag = "AutoRestartCemetryRushFlag", Callback = function(v) autoRestartCemetryRush = v end})
 
