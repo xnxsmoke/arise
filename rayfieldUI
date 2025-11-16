@@ -43,37 +43,20 @@ local Window = Rayfield:CreateWindow({
     Name = "xnxsmoke Hub",
     LoadingTitle = "xnxsmoke Loader",
     LoadingSubtitle = "by xnxsmoke",
-    ConfigurationSaving = {
-        Enabled = true,
-        FileName = "InfiniteModesHub",
-        AutoSave = true
-    },
+    ConfigurationSaving = { Enabled = true, FileName = "InfiniteModesHub", AutoSave = true }
 })
 
 local CastleTab = Window:CreateTab("InfCastle", 4483362458)
 local DesertTab = Window:CreateTab("InfDesert", 4483362458)
 local LabTab = Window:CreateTab("InfLab", 4483362458)
 local CemetryRushTab = Window:CreateTab("CemetryRush", 4483362458)
+local HospRaidTab = Window:CreateTab("HospRaid", 4483362458)
 local MiscTab = Window:CreateTab("Misc", 4483362458)
 
-local standCastleEnabled = false
-local standDesertEnabled = false
-local standCemetryRushEnabled = false
-
-local autoRestartCastle = false
-local autoRestartDesert = false
-local autoRestartLabyrinth = false
-local autoRestartCemetryRush = false
-
-local cemetryRushDifficulty = "Insane"
-local useCemetryRushMode = false
-
-local autoClickEnabled = false
-local autoBloodWeaponSwitch = false
-
-----------------------------------------------------
--- CASTLE
-----------------------------------------------------
+local standCastleEnabled, standDesertEnabled, standCemetryRushEnabled = false, false, false
+local autoRestartCastle, autoRestartDesert, autoRestartLabyrinth, autoRestartCemetryRush = false, false, false, false
+local cemetryRushDifficulty, useCemetryRushMode = "Insane", false
+local autoClickEnabled, autoBloodWeaponSwitch = false, false
 
 local function startCastle()
     fireSafe({Event = "InfiniteCastleAction", Action = "Create"})
@@ -87,40 +70,10 @@ local function restartCastle()
     safeRejoin(startCastle)
 end
 
-CastleTab:CreateButton({
-    Name = "Start Infinite Castle (Manual)",
-    Callback = startCastle
-})
-
-CastleTab:CreateToggle({
-    Name = "Stand in the Middle (InfCastle)",
-    CurrentValue = false,
-    Flag = "StandCastleFlag",
-    Callback = function(v)
-        standCastleEnabled = v
-        if v then safeStandAt(castleCFrame) end
-    end
-})
-
-CastleTab:CreateToggle({
-    Name = "Auto-Restart (on Portal Destroyed)",
-    CurrentValue = false,
-    Flag = "AutoRestartCastleFlag",
-    Callback = function(v) autoRestartCastle = v end
-})
-
-CastleTab:CreateToggle({
-    Name = "Wave Speed 3",
-    CurrentValue = false,
-    Flag = "WaveSpeed3CastleFlag",
-    Callback = function(v)
-        if v then speedUp("InfiniteCastleAction", 3) end
-    end
-})
-
-----------------------------------------------------
--- DESERT
-----------------------------------------------------
+CastleTab:CreateButton({Name = "Start Infinite Castle (Manual)", Callback = startCastle})
+CastleTab:CreateToggle({Name = "Stand in the Middle (InfCastle)", CurrentValue = false, Flag = "StandCastleFlag", Callback = function(v) standCastleEnabled = v if v then safeStandAt(castleCFrame) end end})
+CastleTab:CreateToggle({Name = "Auto-Restart (on Portal Destroyed)", CurrentValue = false, Flag = "AutoRestartCastleFlag", Callback = function(v) autoRestartCastle = v end})
+CastleTab:CreateToggle({Name = "Wave Speed 3", CurrentValue = false, Flag = "WaveSpeed3CastleFlag", Callback = function(v) if v then speedUp("InfiniteCastleAction", 3) end end})
 
 local function startDesert()
     fireSafe({Event = "InfiniteModeAction", Action = "Create"})
@@ -134,49 +87,11 @@ local function restartDesert()
     safeRejoin(startDesert)
 end
 
-DesertTab:CreateButton({
-    Name = "Start Infinite Desert (Manual)",
-    Callback = startDesert
-})
-
-DesertTab:CreateToggle({
-    Name = "Stand in the Middle (InfDesert)",
-    CurrentValue = false,
-    Flag = "StandDesertFlag",
-    Callback = function(v)
-        standDesertEnabled = v
-        if v then safeStandAt(desertCFrame) end
-    end
-})
-
-DesertTab:CreateToggle({
-    Name = "Auto-Restart (on Portal Destroyed)",
-    CurrentValue = false,
-    Flag = "AutoRestartDesertFlag",
-    Callback = function(v) autoRestartDesert = v end
-})
-
-DesertTab:CreateToggle({
-    Name = "Wave Speed 2",
-    CurrentValue = false,
-    Flag = "WaveSpeed2DesertFlag",
-    Callback = function(v)
-        if v then speedUp("InfiniteModeAction", 2) end
-    end
-})
-
-DesertTab:CreateToggle({
-    Name = "Wave Speed 3",
-    CurrentValue = false,
-    Flag = "WaveSpeed3DesertFlag",
-    Callback = function(v)
-        if v then speedUp("InfiniteModeAction", 3) end
-    end
-})
-
-----------------------------------------------------
--- LABYRINTH
-----------------------------------------------------
+DesertTab:CreateButton({Name = "Start Infinite Desert (Manual)", Callback = startDesert})
+DesertTab:CreateToggle({Name = "Stand in the Middle (InfDesert)", CurrentValue = false, Flag = "StandDesertFlag", Callback = function(v) standDesertEnabled = v if v then safeStandAt(desertCFrame) end end})
+DesertTab:CreateToggle({Name = "Auto-Restart (on Portal Destroyed)", CurrentValue = false, Flag = "AutoRestartDesertFlag", Callback = function(v) autoRestartDesert = v end})
+DesertTab:CreateToggle({Name = "Wave Speed 2", CurrentValue = false, Flag = "WaveSpeed2DesertFlag", Callback = function(v) if v then speedUp("InfiniteModeAction", 2) end end})
+DesertTab:CreateToggle({Name = "Wave Speed 3", CurrentValue = false, Flag = "WaveSpeed3DesertFlag", Callback = function(v) if v then speedUp("InfiniteModeAction", 3) end end})
 
 local function startLabyrinth()
     fireSafe({Event = "InfiniteLabyrinthAction", Action = "Create"})
@@ -188,165 +103,57 @@ local function restartLabyrinth()
     safeRejoin(startLabyrinth)
 end
 
-LabTab:CreateButton({
-    Name = "Start Infinite Labyrinth (Manual)",
-    Callback = startLabyrinth
-})
-
-LabTab:CreateToggle({
-    Name = "Auto-Restart (on Portal Destroyed)",
-    CurrentValue = false,
-    Flag = "AutoRestartLabyrinthFlag",
-    Callback = function(v) autoRestartLabyrinth = v end
-})
-
-LabTab:CreateToggle({
-    Name = "Speed 3",
-    CurrentValue = false,
-    Flag = "Speed3LabyrinthFlag",
-    Callback = function(v)
-        if v then speedUp("InfiniteLabyrinthAction", 3) end
-    end
-})
-
-----------------------------------------------------
--- BOSS RUSH (CemetryRush) – Sistemato + Formattato come tuo Hub originale
-----------------------------------------------------
-
-local targetWave = 0
-local autoRestartAtWave = false
-local currentWave = 0
-local waveLabelConnected = {}
-local cemetryRushDifficulty = "Insane"
-local useCemetryRushMode = false
-local standCemetryRushEnabled = false
-
-local cemetryRushCFrame = CFrame.new(214.9814, 1594.4941, -4312.1958)
-
-----------------------------------------------------
--- FUNZIONI PRINCIPALI
-----------------------------------------------------
+LabTab:CreateButton({Name = "Start Infinite Labyrinth (Manual)", Callback = startLabyrinth})
+LabTab:CreateToggle({Name = "Auto-Restart (on Portal Destroyed)", CurrentValue = false, Flag = "AutoRestartLabyrinthFlag", Callback = function(v) autoRestartLabyrinth = v end})
+LabTab:CreateToggle({Name = "Speed 3", CurrentValue = false, Flag = "Speed3LabyrinthFlag", Callback = function(v) if v then speedUp("InfiniteLabyrinthAction", 3) end end})
 
 local function startCemetryRush()
     if not useCemetryRushMode then return end
-
     fireSafe({Event = "BossRushAction", Action = "Create"})
     task.wait(1)
-
-    fireSafe({
-        Event = "BossRushAction",
-        Action = "Start",
-        Dungeon = 3604563306,
-        Diff = cemetryRushDifficulty
-    })
-
-    if standCemetryRushEnabled then
-        safeStandAt(cemetryRushCFrame)
-    end
+    fireSafe({Event = "BossRushAction", Action = "Start", Dungeon = 3604563306, Diff = cemetryRushDifficulty})
+    if standCemetryRushEnabled then safeStandAt(cemetryRushCFrame) end
 end
 
 local function restartCemetryRush()
     safeRejoin(startCemetryRush)
 end
-
-----------------------------------------------------
--- UI RAYFIELD (STESSA FORMATTAZIONE DEL TUO HUB)
-----------------------------------------------------
-
-CemetryRushTab:CreateButton({
-    Name = "Start CemetryRush (Manual)",
-    Callback = startCemetryRush
-})
-
-CemetryRushTab:CreateToggle({
-    Name = "Stand in the Middle",
-    CurrentValue = false,
-    Flag = "StandCemetryRushFlag",
-    Callback = function(v)
-        standCemetryRushEnabled = v
-        if v then safeStandAt(cemetryRushCFrame) end
-    end
-})
-
-CemetryRushTab:CreateDropdown({
-    Name = "Select Difficulty",
-    Options = {"Easy", "Medium", "Hard", "Insane", "Ultra"},
-    CurrentOption = "Insane",
-    Flag = "CemetryRushDifficultyFlag",
-    Callback = function(opt)
-        cemetryRushDifficulty = tostring(opt)
-    end
-})
-
-CemetryRushTab:CreateToggle({
-    Name = "Activate Selected Difficulty",
-    CurrentValue = false,
-    Flag = "UseCemetryRushDifficultyFlag",
-    Callback = function(v)
-        useCemetryRushMode = v
-    end
-})
-
-CemetryRushTab:CreateToggle({
-    Name = "Auto-Restart (on Rush Ended)",
-    CurrentValue = false,
-    Flag = "AutoRestartCemetryRushFlag",
-    Callback = function(v)
-        autoRestartCemetryRush = v
-    end
-})
-
-----------------------------------------------------
--- WAVE TARGET SYSTEM
-----------------------------------------------------
+local targetWave = 0
+local autoRestartAtWave = false
+local currentWave = 0
+local waveLabelConnected = {}
 
 CemetryRushTab:CreateInput({
     Name = "Restart alla Wave",
-    PlaceholderText = "Inserisci wave (es. 20)",
+    PlaceholderText = "Es. 20",
     RemoveTextAfterFocusLost = false,
-    Callback = function(text)
-        local num = tonumber(text)
-
-        if num and num > 0 then
-            targetWave = math.floor(num)
-            print("[Boss Rush] Target wave impostata a:", targetWave)
-        else
-            targetWave = 0
-            warn("[Boss Rush] Valore wave non valido:", text)
-        end
+    Callback = function(txt)
+        local n = tonumber(txt)
+        targetWave = n and n > 0 and math.floor(n) or 0
     end
 })
 
 CemetryRushTab:CreateToggle({
-    Name = "Attiva Auto-Restart alla Wave",
+    Name = "Attiva Restart alla Wave",
     CurrentValue = false,
-    Flag = "AutoRestartAtWaveFlag",
+    Flag = "AutoRestartWaveFlag",
     Callback = function(v)
         autoRestartAtWave = v
-        print("[Boss Rush] Auto-restart per wave:", v)
     end
 })
 
-----------------------------------------------------
--- RILEVAZIONE WAVE (Fixata + Non Duplica)
-----------------------------------------------------
-
 local function detectWaveLabel(lbl)
     if not lbl:IsA("TextLabel") then return end
-    if not lbl.Text:lower():find("wave") then return end
     if waveLabelConnected[lbl] then return end
+    if not lbl.Text:lower():find("wave") then return end
 
     waveLabelConnected[lbl] = true
 
     lbl:GetPropertyChangedSignal("Text"):Connect(function()
         local wave = tonumber(lbl.Text:match("[Ww]ave[^%d]*(%d+)"))
-
         if wave then
             currentWave = wave
-            print("[Boss Rush] Wave aggiornata:", currentWave)
-
-            if autoRestartAtWave and targetWave > 0 and currentWave >= targetWave then
-                print("🔥 [Boss Rush] Wave target raggiunta:", targetWave, "→ Restart")
+            if autoRestartAtWave and targetWave > 0 and wave >= targetWave then
                 autoRestartAtWave = false
                 restartCemetryRush()
             end
@@ -356,102 +163,58 @@ end
 
 task.spawn(function()
     local gui = player:WaitForChild("PlayerGui")
-
-    for _, v in ipairs(gui:GetDescendants()) do
+    for _,v in ipairs(gui:GetDescendants()) do
         detectWaveLabel(v)
     end
-
     gui.DescendantAdded:Connect(detectWaveLabel)
 end)
 
-----------------------------------------------------
--- RESPAWN TP
-----------------------------------------------------
+local targetWave = 0
+local currentWave = 0
+local waveLabelConnected = {}
+local autoRestartAtWave = false
+
+CemetryRushTab:CreateButton({Name = "Start CemetryRush (Manual)", Callback = startCemetryRush})
+CemetryRushTab:CreateToggle({Name = "Stand in the Middle", CurrentValue = false, Flag = "StandCemetryRushFlag", Callback = function(v) standCemetryRushEnabled = v if v then safeStandAt(cemetryRushCFrame) end end})
+CemetryRushTab:CreateDropdown({Name = "Select Difficulty", Options = {"Easy","Medium","Hard","Insane"}, CurrentOption = "Insane", Flag = "CemetryRushDifficultyFlag", Callback = function(opt) cemetryRushDifficulty = opt end})
+CemetryRushTab:CreateToggle({Name = "Activate Selected Difficulty", CurrentValue = false, Flag = "UseCemetryRushDifficultyFlag", Callback = function(v) useCemetryRushMode = v end})
+CemetryRushTab:CreateToggle({Name = "Auto-Restart (on Rush Ended)", CurrentValue = false, Flag = "AutoRestartCemetryRushFlag", Callback = function(v) autoRestartCemetryRush = v end})
+
+local joinedHospRaid = false
+HospRaidTab:CreateToggle({Name = "Join HospRaid", CurrentValue = false, Flag = "JoinHospRaidFlag", Callback = function(v) if v and not joinedHospRaid then joinedHospRaid = true fireSafe({Event="HLRaidAction", Action="Join"}) end end})
+
+MiscTab:CreateToggle({Name = "Auto Click (PunchAttack, Fast)", CurrentValue = false, Flag = "AutoClickFlag", Callback = function(v)
+    autoClickEnabled = v
+    if v then
+        task.spawn(function()
+            while autoClickEnabled do
+                task.wait(0.01)
+                fireSafe({Event="PunchAttack"})
+            end
+        end)
+    end
+end})
+
+MiscTab:CreateToggle({Name = "Auto Blood Weapon Switch", CurrentValue = false, Flag = "AutoBloodWeaponSwitchFlag", Callback = function(v)
+    autoBloodWeaponSwitch = v
+    if v then
+        task.spawn(function()
+            while autoBloodWeaponSwitch do
+                fireSafe({Event="Teams", Action="Equip", TeamId="ced2"})
+                task.wait(2)
+                fireSafe({Event="Teams", Action="Equip", TeamId="f2ae"})
+                task.wait(15)
+            end
+        end)
+    end
+end})
 
 player.CharacterAdded:Connect(function()
     task.wait(1)
+    if standCastleEnabled then safeStandAt(castleCFrame) end
+    if standDesertEnabled then safeStandAt(desertCFrame) end
     if standCemetryRushEnabled then safeStandAt(cemetryRushCFrame) end
 end)
-
--- Rilevazione Wave Fixata
-local function detectWaveLabel(lbl)
-    if not lbl:IsA("TextLabel") then return end
-    if not lbl.Text:lower():find("wave") then return end
-    if waveLabelConnected[lbl] then return end
-
-    waveLabelConnected[lbl] = true
-
-    lbl:GetPropertyChangedSignal("Text"):Connect(function()
-        local wave = tonumber(lbl.Text:match("[Ww]ave[^%d]*(%d+)"))
-
-        if wave then
-            currentWave = wave
-            print("[Boss Rush] Wave aggiornata:", currentWave)
-
-            if autoRestartAtWave and targetWave > 0 then
-                if currentWave >= targetWave then
-                    print("🔥 [Boss Rush] Wave target raggiunta:", targetWave, "→ Restart")
-                    autoRestartAtWave = false
-                    restartCemetryRush()
-                end
-            end
-        end
-    end)
-end
-
-task.spawn(function()
-    local gui = player:WaitForChild("PlayerGui")
-
-    for _, v in ipairs(gui:GetDescendants()) do
-        detectWaveLabel(v)
-    end
-
-    gui.DescendantAdded:Connect(detectWaveLabel)
-end)
-
-----------------------------------------------------
--- MISC
-----------------------------------------------------
-
-MiscTab:CreateToggle({
-    Name = "Auto Click (PunchAttack, Fast)",
-    CurrentValue = false,
-    Flag = "AutoClickFlag",
-    Callback = function(v)
-        autoClickEnabled = v
-        if v then
-            task.spawn(function()
-                while autoClickEnabled do
-                    task.wait(0.01)
-                    fireSafe({Event = "PunchAttack"})
-                end
-            end)
-        end
-    end
-})
-
-MiscTab:CreateToggle({
-    Name = "Auto Blood Weapon Switch",
-    CurrentValue = false,
-    Flag = "AutoBloodWeaponSwitchFlag",
-    Callback = function(v)
-        autoBloodWeaponSwitch = v
-        if v then
-            task.spawn(function()
-                while autoBloodWeaponSwitch do
-                    fireSafe({Event = "Teams", Action = "Equip", TeamId = "ced2"})
-                    task.wait(2)
-                    fireSafe({Event = "Teams", Action = "Equip", TeamId = "f2ae"})
-                    task.wait(15)
-                end
-            end)
-        end
-    end
-})
-
-----------------------------------------------------
--- AUTO RESTART HANDLER
-----------------------------------------------------
 
 dataRemoteEvent.OnClientEvent:Connect(function(...)
     local function scan(tbl)
@@ -474,50 +237,4 @@ dataRemoteEvent.OnClientEvent:Connect(function(...)
     for _, v in ipairs({...}) do scan(v) end
 end)
 
--Wave restart
-
-local currentWave = 0
-
-local function detectWaveLabel(lbl)
-    if not lbl:IsA("TextLabel") then return end
-    if not lbl.Text:find("Wave:") then return end
-
-    lbl:GetPropertyChangedSignal("Text"):Connect(function()
-        local wave = tonumber(lbl.Text:match("Wave:%s*(%d+)"))
-        if wave then
-            currentWave = wave
-            print("Wave aggiornata:", currentWave)
-
-            if autoRestartAtWave and targetWave > 0 then
-                if currentWave >= targetWave then
-                    print("Raggiunta wave target:", targetWave, "→ restarting Boss Rush")
-                    restartCemetryRush()
-                end
-            end
-        end
-    end)
-end
-
-task.spawn(function()
-    local gui = player:WaitForChild("PlayerGui")
-
-    for _, v in ipairs(gui:GetDescendants()) do
-        detectWaveLabel(v)
-    end
-
-    gui.DescendantAdded:Connect(detectWaveLabel)
-end)
-
-----------------------------------------------------
--- RESPAWN TP
-----------------------------------------------------
-
-player.CharacterAdded:Connect(function()
-    task.wait(1)
-    if standCastleEnabled then safeStandAt(castleCFrame) end
-    if standDesertEnabled then safeStandAt(desertCFrame) end
-    if standCemetryRushEnabled then safeStandAt(cemetryRushCFrame) end
-end)
-
-----------------------------------------------------
 Rayfield:LoadConfiguration("InfiniteModesHub")
