@@ -187,6 +187,7 @@ CemetryRushTab:CreateToggle({
     end
 })
 
+-- Dropdown per difficoltà
 CemetryRushTab:CreateDropdown({
     Name = "Select Difficulty",
     Options = {"Easy","Medium","Hard","Insane","Ultra"},
@@ -198,6 +199,7 @@ CemetryRushTab:CreateDropdown({
     end
 })
 
+-- Toggle per abilitare la difficoltà selezionata
 CemetryRushTab:CreateToggle({
     Name = "Usa la difficoltà selezionata",
     CurrentValue = false,
@@ -283,7 +285,29 @@ HospRaidTab:CreateToggle({
     end
 })
 
-local autoClickEnabled, autoBloodWeaponSwitch = false, false
+-- --- AUTCLICK PATCH INTEGRATA ---
+local autoClickEnabled = false
+local autoClickTarget = ""
+local useAutoClickEnemyId = false
+
+MiscTab:CreateInput({
+    Name = "EnemyId per autoclick",
+    PlaceholderText = "4846bfd646df40abbe71e8c023c994ae",
+    RemoveTextAfterFocusLost = false,
+    Flag = "AutoClickEnemyTarget",
+    Callback = function(txt)
+        autoClickTarget = txt
+    end
+})
+
+MiscTab:CreateToggle({
+    Name = "Usa EnemyId specifico",
+    CurrentValue = false,
+    Flag = "AutoClickUseEnemyFlag",
+    Callback = function(v)
+        useAutoClickEnemyId = v
+    end
+})
 
 MiscTab:CreateToggle({
     Name = "Auto Click (PunchAttack, Fast)",
@@ -294,8 +318,12 @@ MiscTab:CreateToggle({
         if v then
             task.spawn(function()
                 while autoClickEnabled do
-                    task.wait(0.01)
-                    fireSafe({Event="PunchAttack"})
+                    task.wait(0.025)
+                    if useAutoClickEnemyId and autoClickTarget ~= "" then
+                        fireSafe({Event="PunchAttack", Enemy=autoClickTarget})
+                    else
+                        fireSafe({Event="PunchAttack"})
+                    end
                 end
             end)
         end
