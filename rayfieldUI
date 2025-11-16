@@ -295,6 +295,14 @@ CemetryRushTab:CreateToggle({
     end
 })
 
+--// HospRaid
+local function joinHospRaid()
+    if joinedHospRaid then return end
+    joinedHospRaid = true
+    fireDynamic({ { { Event="HLRaidAction",Action="Join" }, dynamicKey } })
+end
+HospRaidTab:CreateToggle({ Name="Join HospRaid", CurrentValue=false, Flag="JoinHospRaidFlag", Callback=function(v) if v then joinHospRaid() end end})
+
 --// Misc
 MiscTab:CreateToggle({
     Name = "Auto Click (PunchAttack, Fast)",
