@@ -272,6 +272,34 @@ CemetryRushTab:CreateToggle({
     Callback = function(v) autoRestartCemetryRush = v end
 })
 
+local targetWave = 0
+local autoRestartAtWave = false
+
+CemetryRushTab:CreateInput({
+    Name = "Restart alla Wave",
+    PlaceholderText = "Inserisci wave (es. 20)",
+    RemoveTextAfterFocusLost = false,
+    Callback = function(text)
+        local num = tonumber(text)
+        if num then
+            targetWave = num
+            print("Target wave impostata a:", targetWave)
+        else
+            print("Valore wave non valido:", text)
+        end
+    end
+})
+
+CemetryRushTab:CreateToggle({
+    Name = "Attiva Auto-Restart alla Wave",
+    CurrentValue = false,
+    Flag = "AutoRestartAtWaveFlag",
+    Callback = function(v)
+        autoRestartAtWave = v
+        print("Auto restart per wave =", v)
+    end
+})
+
 ----------------------------------------------------
 -- MISC
 ----------------------------------------------------
@@ -335,6 +363,40 @@ dataRemoteEvent.OnClientEvent:Connect(function(...)
         end
     end
     for _, v in ipairs({...}) do scan(v) end
+end)
+
+-Wave restart
+
+local currentWave = 0
+
+local function detectWaveLabel(lbl)
+    if not lbl:IsA("TextLabel") then return end
+    if not lbl.Text:find("Wave:") then return end
+
+    lbl:GetPropertyChangedSignal("Text"):Connect(function()
+        local wave = tonumber(lbl.Text:match("Wave:%s*(%d+)"))
+        if wave then
+            currentWave = wave
+            print("Wave aggiornata:", currentWave)
+
+            if autoRestartAtWave and targetWave > 0 then
+                if currentWave >= targetWave then
+                    print("Raggiunta wave target:", targetWave, "→ restarting Boss Rush")
+                    restartCemetryRush()
+                end
+            end
+        end
+    end)
+end
+
+task.spawn(function()
+    local gui = player:WaitForChild("PlayerGui")
+
+    for _, v in ipairs(gui:GetDescendants()) do
+        detectWaveLabel(v)
+    end
+
+    gui.DescendantAdded:Connect(detectWaveLabel)
 end)
 
 ----------------------------------------------------
