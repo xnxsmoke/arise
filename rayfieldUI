@@ -46,7 +46,6 @@ local Window = Rayfield:CreateWindow({
     ConfigurationSaving = { Enabled = true, FileName = "InfiniteModesHub", AutoSave = true }
 })
 
--- Tabs
 local CastleTab = Window:CreateTab("InfCastle", 4483362458)
 local DesertTab = Window:CreateTab("InfDesert", 4483362458)
 local LabTab = Window:CreateTab("InfLab", 4483362458)
@@ -54,7 +53,6 @@ local CemetryRushTab = Window:CreateTab("CemetryRush", 4483362458)
 local HospRaidTab = Window:CreateTab("HospRaid", 4483362458)
 local MiscTab = Window:CreateTab("Misc", 4483362458)
 
--- Castle variables
 local standCastleEnabled, autoRestartCastle = false, false
 
 local function startCastle()
@@ -92,7 +90,6 @@ CastleTab:CreateToggle({
     Callback = function(v) if v then speedUp("InfiniteCastleAction", 3) end end
 })
 
--- Desert variables
 local standDesertEnabled, autoRestartDesert = false, false
 
 local function startDesert()
@@ -136,7 +133,6 @@ DesertTab:CreateToggle({
     Callback = function(v) if v then speedUp("InfiniteModeAction", 3) end end
 })
 
--- Lab variables
 local autoRestartLabyrinth = false
 
 local function startLabyrinth()
@@ -163,10 +159,10 @@ LabTab:CreateToggle({
     Callback = function(v) if v then speedUp("InfiniteLabyrinthAction", 3) end end
 })
 
--- CemetryRush/BossRush variables
-local standCemetryRushEnabled, autoRestartCemetryRush = false, false
+-- === PART CEMETRY RUSH (BOSSRUSH) ===
+local standCemetryRushEnabled, autoRestartCemetryRush, autoRestartAtWave = false, false, false
 local cemetryRushDifficulty = "Insane"
-local targetWave = 0      -- restart alla wave
+local targetWave = 0
 local currentWave = 0
 local waveLabelConnected = {}
 
@@ -174,7 +170,7 @@ CemetryRushTab:CreateInput({
     Name = "Restart alla Wave",
     PlaceholderText = "Es. 20",
     RemoveTextAfterFocusLost = false,
-    Flag = "WaveRestartValue", -- flag per salvataggio
+    Flag = "WaveRestartValue",
     Callback = function(txt)
         local n = tonumber(txt)
         targetWave = n and n > 0 and math.floor(n) or 0
@@ -194,22 +190,22 @@ CemetryRushTab:CreateDropdown({
     Name = "Select Difficulty",
     Options = {"Easy","Medium","Hard","Insane","Ultra"},
     CurrentOption = cemetryRushDifficulty,
-    Flag = "CemetryRushDifficultyFlag", -- flag per salvataggio
+    Flag = "CemetryRushDifficultyFlag",
     Callback = function(opt)
         cemetryRushDifficulty = opt
     end
 })
 
--- BossRush ora prende sempre la difficoltà scelta dal dropdown, anche senza la toggle!
 local function startCemetryRush()
     fireSafe({Event = "BossRushAction", Action = "Create"})
     task.wait(1)
+    -- la difficulty è sempre trasmessa, anche "Ultra"
     fireSafe({
         Event = "BossRushAction",
         Action = "Start",
         Dungeon = 3604563306,
-        Diff = cemetryRushDifficulty or "Insane",
-        Wave = targetWave > 0 and targetWave or nil -- utile se il server usa questo parametro
+        Diff = cemetryRushDifficulty, -- None filtering, always selected value!
+        Wave = targetWave > 0 and targetWave or nil
     })
     if standCemetryRushEnabled then safeStandAt(cemetryRushCFrame) end
 end
@@ -235,18 +231,6 @@ CemetryRushTab:CreateToggle({
     Callback = function(v) autoRestartCemetryRush = v end
 })
 
--- Wave detection for auto-restart
-local autoRestartAtWave = false
-CemetryRushTab:CreateToggle({
-    Name = "Attiva Restart alla Wave",
-    CurrentValue = autoRestartAtWave,
-    Flag = "AutoRestartWaveFlag",
-    Callback = function(v)
-        autoRestartAtWave = v
-    end
-})
-
--- On wave label change, do restart if enabled
 local function detectWaveLabel(lbl)
     if not lbl:IsA("TextLabel") then return end
     if waveLabelConnected[lbl] then return end
@@ -273,7 +257,6 @@ task.spawn(function()
     gui.DescendantAdded:Connect(detectWaveLabel)
 end)
 
--- HospRaid Tab
 local joinedHospRaid = false
 HospRaidTab:CreateToggle({
     Name = "Join HospRaid",
@@ -287,7 +270,6 @@ HospRaidTab:CreateToggle({
     end
 })
 
--- Misc Tab
 local autoClickEnabled, autoBloodWeaponSwitch = false, false
 
 MiscTab:CreateToggle({
@@ -326,7 +308,6 @@ MiscTab:CreateToggle({
     end
 })
 
--- CharacterAdded: rientra nel punto
 player.CharacterAdded:Connect(function()
     task.wait(1)
     if standCastleEnabled then safeStandAt(castleCFrame) end
@@ -334,7 +315,6 @@ player.CharacterAdded:Connect(function()
     if standCemetryRushEnabled then safeStandAt(cemetryRushCFrame) end
 end)
 
--- Event listener for auto-restart portal/rush ended
 dataRemoteEvent.OnClientEvent:Connect(function(...)
     local function scan(tbl)
         if type(tbl) ~= "table" then return end
@@ -356,5 +336,4 @@ dataRemoteEvent.OnClientEvent:Connect(function(...)
     for _, v in ipairs({...}) do scan(v) end
 end)
 
--- Rayfield carica configurazione (flags persistenti!)
 Rayfield:LoadConfiguration("InfiniteModesHub")
