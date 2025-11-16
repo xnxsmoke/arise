@@ -159,7 +159,7 @@ LabTab:CreateToggle({
     Callback = function(v) if v then speedUp("InfiniteLabyrinthAction", 3) end end
 })
 
--- === CemetryRush/BossRush sezione ===
+-- CemetryRush/BossRush sezione
 local standCemetryRushEnabled, autoRestartCemetryRush, autoRestartAtWave = false, false, false
 local cemetryRushDifficulty = "Insane"
 local useSelectedDifficulty = false
@@ -193,7 +193,7 @@ CemetryRushTab:CreateDropdown({
     CurrentOption = cemetryRushDifficulty,
     Flag = "CemetryRushDifficultyFlag",
     Callback = function(opt)
-        cemetryRushDifficulty = opt
+        cemetryRushDifficulty = typeof(opt) == "table" and (opt.Name or opt[1]) or tostring(opt)
         print("[DEBUG] Difficulty selected:", cemetryRushDifficulty)
     end
 })
@@ -204,7 +204,7 @@ CemetryRushTab:CreateToggle({
     Flag = "UseSelectedDifficultyFlag",
     Callback = function(v)
         useSelectedDifficulty = v
-        print("[DEBUG] Use selected difficulty toggle:", v)
+        print("[DEBUG] Usa selezione:", v)
     end
 })
 
@@ -212,23 +212,14 @@ local function startCemetryRush()
     print("[DEBUG] Try BossRush Start, UseSelected:", useSelectedDifficulty, "Diff:", cemetryRushDifficulty)
     fireSafe({Event = "BossRushAction", Action = "Create"})
     task.wait(1)
-    if useSelectedDifficulty then
-        fireSafe({
-            Event = "BossRushAction",
-            Action = "Start",
-            Dungeon = 3604563306,
-            Diff = cemetryRushDifficulty,
-            Wave = targetWave > 0 and targetWave or nil
-        })
-    else
-        fireSafe({
-            Event = "BossRushAction",
-            Action = "Start",
-            Dungeon = 3604563306,
-            Diff = "Insane", -- invia default "Insane" se il toggle non è attivo
-            Wave = targetWave > 0 and targetWave or nil
-        })
-    end
+    local diff = useSelectedDifficulty and cemetryRushDifficulty or "Insane"
+    fireSafe({
+        Event = "BossRushAction",
+        Action = "Start",
+        Dungeon = 3604563306,
+        Diff = diff,
+        Wave = targetWave > 0 and targetWave or nil
+    })
     if standCemetryRushEnabled then safeStandAt(cemetryRushCFrame) end
 end
 
