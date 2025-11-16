@@ -285,32 +285,11 @@ HospRaidTab:CreateToggle({
     end
 })
 
--- --- AUTCLICK PATCH INTEGRATA ---
+-- --- AUTCLICK PATCH DA SCRIPT NATIVO ---
 local autoClickEnabled = false
-local autoClickTarget = ""
-local useAutoClickEnemyId = false
-
-MiscTab:CreateInput({
-    Name = "EnemyId per autoclick",
-    PlaceholderText = "4846bfd646df40abbe71e8c023c994ae",
-    RemoveTextAfterFocusLost = false,
-    Flag = "AutoClickEnemyTarget",
-    Callback = function(txt)
-        autoClickTarget = txt
-    end
-})
 
 MiscTab:CreateToggle({
-    Name = "Usa EnemyId specifico",
-    CurrentValue = false,
-    Flag = "AutoClickUseEnemyFlag",
-    Callback = function(v)
-        useAutoClickEnemyId = v
-    end
-})
-
-MiscTab:CreateToggle({
-    Name = "Auto Click (PunchAttack, Fast)",
+    Name = "Auto Click (Arma Nativa, Fast)",
     CurrentValue = false,
     Flag = "AutoClickFlag",
     Callback = function(v)
@@ -318,12 +297,10 @@ MiscTab:CreateToggle({
         if v then
             task.spawn(function()
                 while autoClickEnabled do
-                    task.wait(0.025)
-                    if useAutoClickEnemyId and autoClickTarget ~= "" then
-                        fireSafe({Event="PunchAttack", Enemy=autoClickTarget})
-                    else
-                        fireSafe({Event="PunchAttack"})
-                    end
+                    require(game:GetService("ReplicatedStorage").SharedModules.WeaponsModule).Click({
+                        KeyCode = Enum.KeyCode.ButtonX;
+                    }, false, nil, true)
+                    task.wait(0.03)
                 end
             end)
         end
