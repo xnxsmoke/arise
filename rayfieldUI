@@ -293,51 +293,35 @@ local targetWaveCastle = 0
 local currentWaveCastle = 0
 local waveLabelConnectedCastle = {}
 local selectedCastleFloor = nil -- floor scelto dall'utente
+local autoInfCastleSpeed = false
+local selectedCastleSpeed = 4
 
 -- Funzione Reset con gemme
 local function resetCastleWithGems()
-    local args = {
-        {
-            {
-                Event = "CastleAction",
-                Action = "Reset",
-                Type = "Gem"
-            },
-            "\016"
-        }
-    }
-    ReplicatedStorage:WaitForChild("BridgeNet2"):WaitForChild("dataRemoteEvent"):FireServer(unpack(args))
+    fireSafe({
+        Event = "CastleAction",
+        Action = "Reset",
+        Type = "Gem"
+    })
 end
 
 -- Funzione Join Castle (senza floor)
 local function joinCastleNoFloor()
-    local args = {
-        {
-            {
-                Check = false,
-                Action = "Join",
-                Event = "CastleAction"
-            },
-            "\016"
-        }
-    }
-    ReplicatedStorage:WaitForChild("BridgeNet2"):WaitForChild("dataRemoteEvent"):FireServer(unpack(args))
+    fireSafe({
+        Event = "CastleAction",
+        Action = "Join",
+        Check = false
+    })
 end
 
 -- Funzione Join Castle con floor
 local function joinCastleFloor(floor)
-    local args = {
-        {
-            {
-                Check = true,
-                Action = "Join",
-                Floor = tostring(floor),
-                Event = "CastleAction"
-            },
-            "\016"
-        }
-    }
-    ReplicatedStorage:WaitForChild("BridgeNet2"):WaitForChild("dataRemoteEvent"):FireServer(unpack(args))
+    fireSafe({
+        Event = "CastleAction",
+        Action = "Join",
+        Check = true,
+        Floor = tostring(floor)
+    })
 end
 
 -- Funzione Reset + Rejoin
@@ -394,18 +378,35 @@ InfCastleTab:CreateToggle({
     end
 })
 
--- Pulsanti velocità
-InfCastleTab:CreateButton({
-    Name = "Velocità 1",
-    Callback = function() speedUp("CastleAction", 1) end
+-- Toggle per attivare auto speed
+InfCastleTab:CreateToggle({
+    Name = "Auto Inf Castle Speed",
+    CurrentValue = false,
+    Flag = "AutoInfCastleSpeedFlag",
+    Callback = function(v)
+        autoInfCastleSpeed = v
+    end
 })
-InfCastleTab:CreateButton({
-    Name = "Velocità 2",
-    Callback = function() speedUp("CastleAction", 2) end
-})
-InfCastleTab:CreateButton({
-    Name = "Velocità 4",
-    Callback = function() speedUp("CastleAction", 4) end
+
+-- Input per selezionare la velocità
+InfCastleTab:CreateInput({
+    Name = "[Inf Castle] Select Speed",
+    PlaceholderText = "Es. 1, 2 o 4",
+    RemoveTextAfterFocusLost = false,
+    Flag = "InfCastleSpeedInput",
+    Callback = function(txt)
+        local speed = tonumber(txt)
+        if speed == 1 or speed == 2 or speed == 4 then
+            selectedCastleSpeed = speed
+            fireSafe({
+                Event = "CastleAction",
+                Action = "SpeedUp",
+                Speed = speed
+            })
+        else
+            warn("[InfCastle] Velocità non valida:", txt)
+        end
+    end
 })
 
 -- Rilevamento wave label
@@ -426,6 +427,27 @@ local function detectCastleWaveLabel(lbl)
         end
     end)
 end
+
+-- Hook GUI per rilevare wave
+task.spawn(function()
+    local gui = player:WaitForChild("PlayerGui")
+    for _,v in ipairs(gui:GetDescendants()) do
+        detectCastleWaveLabel(v)
+    end
+    gui.DescendantAdded:Connect(detectCastleWaveLabel)
+end)
+
+-- SpeedUp automatico all'ingresso
+player.CharacterAdded:Connect(function()
+    task.wait(1)
+    if autoInfCastleSpeed and selectedCastleSpeed then
+        fireSafe({
+            Event = "CastleAction",
+            Action = "SpeedUp",
+            Speed = selectedCastleSpeed
+        })
+    end
+end)
 
 -- Hook GUI per rilevare wave
 task.spawn(function()
