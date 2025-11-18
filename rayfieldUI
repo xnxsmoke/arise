@@ -285,6 +285,157 @@ HospRaidTab:CreateToggle({
     end
 })
 
+local InfCastleTab = Window:CreateTab("InfCastle", 4483362458)
+
+-- Variabili InfCastle
+local autoResetRejoinCastle = false
+local targetWaveCastle = 0
+local currentWaveCastle = 0
+local waveLabelConnectedCastle = {}
+local selectedCastleFloor = nil -- floor scelto dall'utente
+
+-- Funzione Reset con gemme
+local function resetCastleWithGems()
+    local args = {
+        {
+            {
+                Event = "CastleAction",
+                Action = "Reset",
+                Type = "Gem"
+            },
+            "\016"
+        }
+    }
+    ReplicatedStorage:WaitForChild("BridgeNet2"):WaitForChild("dataRemoteEvent"):FireServer(unpack(args))
+end
+
+-- Funzione Join Castle (senza floor)
+local function joinCastleNoFloor()
+    local args = {
+        {
+            {
+                Check = false,
+                Action = "Join",
+                Event = "CastleAction"
+            },
+            "\016"
+        }
+    }
+    ReplicatedStorage:WaitForChild("BridgeNet2"):WaitForChild("dataRemoteEvent"):FireServer(unpack(args))
+end
+
+-- Funzione Join Castle con floor
+local function joinCastleFloor(floor)
+    local args = {
+        {
+            {
+                Check = true,
+                Action = "Join",
+                Floor = tostring(floor),
+                Event = "CastleAction"
+            },
+            "\016"
+        }
+    }
+    ReplicatedStorage:WaitForChild("BridgeNet2"):WaitForChild("dataRemoteEvent"):FireServer(unpack(args))
+end
+
+-- Funzione Reset + Rejoin
+local function resetAndRejoinCastle()
+    resetCastleWithGems()
+    task.wait(2)
+    if selectedCastleFloor then
+        joinCastleFloor(selectedCastleFloor)
+    else
+        joinCastleNoFloor()
+    end
+end
+
+-- Pulsante Join senza floor
+InfCastleTab:CreateButton({
+    Name = "Join Castle (No Floor)",
+    Callback = joinCastleNoFloor
+})
+
+-- Input per Join con floor
+InfCastleTab:CreateInput({
+    Name = "Join Castle con Floor",
+    PlaceholderText = "Es. 10",
+    RemoveTextAfterFocusLost = false,
+    Flag = "CastleFloorInput",
+    Callback = function(txt)
+        local n = tonumber(txt)
+        if n and n > 0 then
+            selectedCastleFloor = tostring(math.floor(n))
+            joinCastleFloor(selectedCastleFloor)
+        end
+    end
+})
+
+-- Input per wave di uscita/rejoin
+InfCastleTab:CreateInput({
+    Name = "Reset+Rejoin alla Wave",
+    PlaceholderText = "Es. 20",
+    RemoveTextAfterFocusLost = false,
+    Flag = "CastleWaveExitValue",
+    Callback = function(txt)
+        local n = tonumber(txt)
+        targetWaveCastle = n and n > 0 and math.floor(n) or 0
+    end
+})
+
+-- Toggle per attivare reset+rejoin
+InfCastleTab:CreateToggle({
+    Name = "Attiva reset+rejoin alla Wave",
+    CurrentValue = false,
+    Flag = "AutoResetRejoinCastleFlag",
+    Callback = function(v)
+        autoResetRejoinCastle = v
+    end
+})
+
+-- Pulsanti velocità
+InfCastleTab:CreateButton({
+    Name = "Velocità 1",
+    Callback = function() speedUp("CastleAction", 1) end
+})
+InfCastleTab:CreateButton({
+    Name = "Velocità 2",
+    Callback = function() speedUp("CastleAction", 2) end
+})
+InfCastleTab:CreateButton({
+    Name = "Velocità 4",
+    Callback = function() speedUp("CastleAction", 4) end
+})
+
+-- Rilevamento wave label
+local function detectCastleWaveLabel(lbl)
+    if not lbl:IsA("TextLabel") then return end
+    if waveLabelConnectedCastle[lbl] then return end
+    if not lbl.Text:lower():find("wave") then return end
+
+    waveLabelConnectedCastle[lbl] = true
+    lbl:GetPropertyChangedSignal("Text"):Connect(function()
+        local wave = tonumber(lbl.Text:match("[Ww]ave[^%d]*(%d+)"))
+        if wave then
+            currentWaveCastle = wave
+            if autoResetRejoinCastle and targetWaveCastle > 0 and wave >= targetWaveCastle then
+                autoResetRejoinCastle = false
+                resetAndRejoinCastle()
+            end
+        end
+    end)
+end
+
+-- Hook GUI per rilevare wave
+task.spawn(function()
+    local gui = player:WaitForChild("PlayerGui")
+    for _,v in ipairs(gui:GetDescendants()) do
+        detectCastleWaveLabel(v)
+    end
+    gui.DescendantAdded:Connect(detectCastleWaveLabel)
+end)
+
 -- --- AUTCLICK PATCH DA SCRIPT NATIVO ---
 local autoClickEnabled = false
 
