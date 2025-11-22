@@ -526,5 +526,42 @@ dataRemoteEvent.OnClientEvent:Connect(function(...)
     end
     for _, v in ipairs({...}) do scan(v) end
 end)
+-- =========================
+-- AUTO EXEC SYSTEM
+-- =========================
+
+local autoExecEnabled = false
+local lastMode = nil
+local hubURL = "https://raw.githubusercontent.com/xnxsmoke/arise/refs/heads/main/rayfieldUI"
+local modeAttribute = "CurrentMode" -- puoi cambiare in "CurrentZone" o "CurrentEvent" se il gioco usa altri nomi
+
+-- Toggle dentro Misc
+MiscTab:CreateToggle({
+    Name = "Auto Exec",
+    CurrentValue = false,
+    Flag = "AutoExecFlag",
+    Callback = function(v)
+        autoExecEnabled = v
+    end
+})
+
+-- Funzione per rieseguire la Hub
+local function reloadHub()
+    print("[AutoExec] Ricarico la Hub...")
+    loadstring(game:HttpGet(hubURL))()
+end
+
+-- Monitoraggio continuo del cambio modalità
+task.spawn(function()
+    local rs = game:GetService("ReplicatedStorage")
+    while true do
+        task.wait(1)
+        local current = rs:GetAttribute(modeAttribute)
+        if autoExecEnabled and current and current ~= lastMode then
+            lastMode = current
+            reloadHub()
+        end
+    end
+end)
 
 Rayfield:LoadConfiguration("InfiniteModesHub")
